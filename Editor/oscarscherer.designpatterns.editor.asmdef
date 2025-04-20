@@ -1,6 +1,6 @@
 {
-    "name": "NewAssembly",
-    "rootNamespace": "",
+    "name": "Design Patterns Editor",
+    "rootNamespace": "DesignPatterns",
     "references": [
         "GUID:1e403a05c473fc14086b8909a5001f31"
     ],
