@@ -5,6 +5,6 @@ Generic implementations of useful design patterns.
 * ~~State Machine~~
 * ~~Behaviour Tree~~
 * ~~Event Bus~~
-* Scriptable Variables
+* Scriptable Object Variables
 * Add documentation
 * Finish readme
