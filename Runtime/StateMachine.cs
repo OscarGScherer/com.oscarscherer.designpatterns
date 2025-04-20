@@ -6,17 +6,11 @@ namespace DesignPatterns
 {
     public class StateMachine : MonoBehaviour
     {
-        public abstract class Transition { public abstract Type Type(); }
-        public class Transition<T> : Transition where T : State
-        {
-            public override Type Type() => typeof(T); 
-        }
-
         public abstract class State
         {
-            public State(GameObject gameObject) {}
+            public abstract void Initialize(GameObject gameObject);
             public virtual void OnEnter() {}
-            public abstract Transition Update(float deltaTime);
+            public abstract State Update(float deltaTime);
             public virtual void OnExit() {}
             public virtual string ToDebugString() => "You can override \"ToDebugString()\" to display custom debug information about your state here!";
         }
@@ -24,43 +18,50 @@ namespace DesignPatterns
         public State currentState;
         private Dictionary<Type,State> states = new Dictionary<Type, State>();
 
-        private void AddState(Type stateType)
+        private void AddState(State newState)
         {
-            if(states.ContainsKey(stateType))
+            if(states.ContainsKey(newState.GetType()))
             {
-                Debug.LogWarning("Adding a duplicate state of type " + stateType + " on state machine in " + name);
+                Debug.LogWarning("Adding a duplicate state of type " + newState.GetType() + " on state machine in " + name);
                 return;
             }
-            State state = (State) Activator.CreateInstance(stateType, gameObject);
-            states.Add(state.GetType(), state);
+            newState.Initialize(gameObject);
+            states.Add(newState.GetType(), newState);
         }
 
-        private State GetStateOfType(Type stateType)
+        private void AddState<T>() where T : State, new() => AddState(new T());
+
+        private State GetStateOfSameTypeAs(State state)
         {
-            if(!states.ContainsKey(stateType)) AddState(stateType);
-            return states[stateType];
+            AddState(state);
+            return states[state.GetType()];
         }
 
-        protected void SetStartingState(Type stateType)
+        private State GetStateOfType<T>() where T : State, new()
         {
-            if(!states.ContainsKey(stateType)) AddState(stateType);
-            currentState = GetStateOfType(stateType);
+            AddState<T>();
+            return states[typeof(T)];
+        }
+
+        protected void SetStartingState<T>() where T : State, new()
+        {
+            AddState<T>();
+            currentState = GetStateOfType<T>();
             currentState.OnEnter();
         }
 
         protected void UpdateStateMachine(float deltaTime)
         {
-            Transition stateTransition = currentState.Update(deltaTime);
-            HandleTransition(stateTransition);
+            State newState = currentState.Update(deltaTime);
+            HandleTransition(newState);
         }
 
-        private void HandleTransition(Transition stateTransition)
+        private void HandleTransition(State newState)
         {
-            if(stateTransition == null) return;
-            Type transition = stateTransition.Type();
-            if(transition == currentState.GetType()) return;
+            if(newState == null) return;
+            if(newState.GetType() == currentState.GetType()) return;
             currentState.OnExit();
-            currentState = GetStateOfType(transition);
+            currentState = GetStateOfSameTypeAs(newState);
             currentState.OnEnter();
         }
     }
