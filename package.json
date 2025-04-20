@@ -4,6 +4,7 @@
     "displayName": "Design Patterns",
     "description": "A collection of common design patterns",
     "unity": "2019.1",
+    "dependencies": { },
     "author": {
       "name": "Oscar Scherer"
     }
