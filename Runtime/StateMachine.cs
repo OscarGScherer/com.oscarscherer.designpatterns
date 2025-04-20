@@ -33,19 +33,19 @@ namespace DesignPatterns
 
         private State GetStateOfSameTypeAs(State state)
         {
-            AddState(state);
+            if(!states.ContainsKey(state.GetType())) AddState(state);
             return states[state.GetType()];
         }
 
         private State GetStateOfType<T>() where T : State, new()
         {
-            AddState<T>();
+            if(!states.ContainsKey(typeof(T))) AddState<T>();
             return states[typeof(T)];
         }
 
         protected void SetStartingState<T>() where T : State, new()
         {
-            AddState<T>();
+            if(!states.ContainsKey(typeof(T))) AddState<T>();
             currentState = GetStateOfType<T>();
             currentState.OnEnter();
         }
