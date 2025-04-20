@@ -16,9 +16,9 @@ namespace DesignPatterns
         }
 
         public State currentState;
-        private Dictionary<Type,State> states = new Dictionary<Type, State>();
+        protected Dictionary<Type,State> states = new Dictionary<Type, State>();
 
-        private void AddState(State newState)
+        protected void AddState(State newState)
         {
             if(states.ContainsKey(newState.GetType()))
             {
@@ -29,15 +29,15 @@ namespace DesignPatterns
             states.Add(newState.GetType(), newState);
         }
 
-        private void AddState<T>() where T : State, new() => AddState(new T());
+        protected void AddState<T>() where T : State, new() => AddState(new T());
 
-        private State GetStateOfSameTypeAs(State state)
+        protected State GetStateOfSameTypeAs(State state)
         {
             if(!states.ContainsKey(state.GetType())) AddState(state);
             return states[state.GetType()];
         }
 
-        private State GetStateOfType<T>() where T : State, new()
+        protected State GetStateOfType<T>() where T : State, new()
         {
             if(!states.ContainsKey(typeof(T))) AddState<T>();
             return states[typeof(T)];
@@ -56,7 +56,7 @@ namespace DesignPatterns
             HandleTransition(newState);
         }
 
-        private void HandleTransition(State newState)
+        protected void HandleTransition(State newState)
         {
             if(newState == null) return;
             if(newState.GetType() == currentState.GetType()) return;
