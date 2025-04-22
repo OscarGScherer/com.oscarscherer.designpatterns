@@ -3,31 +3,22 @@ using UnityEngine;
 
 namespace DesignPatterns
 {
-    public class BehaviourTree : MonoBehaviour
+    /// <summary>
+    /// Base class for behaviour trees. Inherit from it to make your own
+    /// </summary>
+    public abstract class BehaviourTree : MonoBehaviour
     {
+        // Custom inspector variables
         [HideInInspector] public float treeViewerScale = 1f;
         [HideInInspector] public Node selectedNode = null;
 
-        protected virtual Node BuildTree() => null;
-        public Node root = BuildTestTree();
+        protected abstract Node BuildTree();
 
-        private static Node BuildTestTree()
-        {
-            Node root = new Selector("Main");
+        public Node root;
 
-            Node seq0 = root.Attatch(new Sequencer("Seq0"));
-            Node seq1 = seq0.Attatch(new Node("Seq1"));
-            seq1.Attatch(new Node("Leaf1 testing testing testing testing testing"));
-            seq1.Attatch(new Node("Leaf2"));
-            seq0.Attatch(new Node("Leaf3"));
-
-            Node seq2 = root.Attatch(new Sequencer("Seq2"));
-            seq2.Attatch(new Node("Leaf4"));
-            seq2.Attatch(new Node("Leaf5"));
-
-            return root;
-        }
-
+        /// <summary>
+        /// Gets the height of the tree recursively. Used only to draw the custom inspector.
+        /// </summary>
         public int GetHeightRecursive(Node current = null, int acc = 1)
         {
             if(root == null) return 0;
@@ -41,7 +32,9 @@ namespace DesignPatterns
             }
             return max;
         }
-
+        /// <summary>
+        /// Gets the total number of leafs in the tree recusively. Used only to draw the custom inspector.
+        /// </summary>
         public int GetNumOfLeafsRecursive(Node current = null)
         {
             if(root == null) return 0;
@@ -51,21 +44,30 @@ namespace DesignPatterns
             foreach(Node child in current.children) count += GetNumOfLeafsRecursive(child);
             return count;
         }
-
+        /// <summary>
+        /// Resets all the lastState of all nodes in the tree. Only useful to properly draw the custom inspector.
+        /// </summary>
         private void ResetNodeLastStateRecursive(Node node)
         {
             node.lastState = Node.State.NONE;
             foreach(Node child in node.children) ResetNodeLastStateRecursive(child);
         }
-
+        /// <summary>
+        /// Evaluates the tree, starting from the root, with the given delta time.
+        /// </summary>
         protected void EvaluateTree(float deltaTime)
         {
             if(root == null) root = BuildTree();
-            // ResetNodeLastStateRecursive(root);
+            #if UNITY_EDITOR
+                ResetNodeLastStateRecursive(root);
+            #endif
             root.Evaluate(deltaTime);
         }
 
-        public class Node
+        /// <summary>
+        /// Base class for all nodes. You should inherit from it to make your own custom nodes.
+        /// </summary>
+        public abstract class Node
         {
             public State lastState = State.NONE;
             public enum State { NONE = -1, FAILURE, IN_PROGRESS, SUCCESS }
@@ -73,6 +75,10 @@ namespace DesignPatterns
             public readonly string name;
             public List<Node> children = new List<Node>();
 
+            /// <summary>
+            /// Only used for drawing the custom inspector, the priority is only used to determine
+            /// which color is drawn when the lines merge (gree, red, or blue)
+            /// </summary>
             public State GetHighestPriorityStateInChildren(int startIndex)
             {
                 State highestPriorityState = State.NONE;
@@ -85,17 +91,32 @@ namespace DesignPatterns
             }
 
             public Node(string name) => this.name = name;
-            // public Node() => this.name = "unnamed";
 
+            /// <summary>
+            /// Evaluates this node with the given delta time.
+            /// </summary>
+            /// <returns> The state of this node after evaluation. </returns>
             public State Evaluate(float deltaTime)
             {
                 lastState = EvaluateProccess(deltaTime);
                 return lastState;
             }
-            protected virtual State EvaluateProccess(float deltaTime) => State.SUCCESS;
 
+            /// <summary>
+            /// Implement this method to set your custom evaluation proccess.
+            /// </summary>
+            /// <returns> The state of this node after evaluation. </returns>
+            protected abstract State EvaluateProccess(float deltaTime);
+
+            /// <summary>
+            /// Override this function to write text to be shown in the custom inspector for debuginng.
+            /// </summary>
             public virtual string ToDebugString() => "You can override \"ToDebugString()\" to display custom debug information about your node here!";
 
+            /// <summary>
+            /// Attaches a child node to this node.
+            /// </summary>
+            /// <returns> The child node you just attatched. </returns>
             public Node Attatch(Node node)
             {
                 children.Add(node);
@@ -103,6 +124,11 @@ namespace DesignPatterns
             }
         }
 
+        /// <summary>
+        /// Sequencer node. It evaluates all of its children in sequence,
+        /// if they all succeed, then it itself succeeds, but if any of them
+        /// fail or are in progress, it returns early with the same state.
+        /// </summary>
         public class Sequencer : Node
         {
             public Sequencer(string name) : base(name) {}
@@ -120,6 +146,11 @@ namespace DesignPatterns
             }
         }
 
+        /// <summary>
+        /// Selector node. It evaluates all of its children in sequence,
+        /// if any of them succeed or are in progress, then it itself returns the same state.
+        /// If all children fail, it fails.
+        /// </summary>
         public class Selector : Node
         {
             public Selector(string name) : base(name) {}
