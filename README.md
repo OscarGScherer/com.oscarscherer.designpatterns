@@ -11,7 +11,7 @@ Generic implementations of commonly used design patterns.
 **Planned:**
 * Scriptable Object Variables and Events
 
-## Singleton
+# Singleton
 To create a singleton, simply inherit from ```Singleton```. Note that if you want to use OnEnable and OnDisable, you must override the existing methods and call the base implementation for both, since those are used to keep track of each Singleton type.
 ```c#
 public class ExampleSingleton : Singleton
@@ -38,7 +38,10 @@ Below is how you would get your singleton from somewhere else in the code. If th
 ExampleSingleton exampleSingleton = Singleton.Get<ExampleSingleton>();
 ```
 
-## State Machine
+# State Machine
+
+> ```namespace DesignPatterns.StateMachine```
+
 To create a state machine you need to inherit from the ```StateMachine``` class. Then you need to call ```SetStartingState<T>``` once to set it up, then call ```UpdateStateMachine``` to update it.
 ```c#
 public class StateMachineExample : StateMachine
@@ -89,6 +92,49 @@ You can also override ```ToDebugString()``` inside state to print some custom de
 ![image](https://github.com/user-attachments/assets/48155fe0-b2e1-465b-bc38-5c1cce55785f)
 
 
-## Behaviour Tree
+# Behaviour Tree
+
+To create a behaviour tree, you need to inherit from ```BehaviourTree```. And to make a node, you inherit from ```BehaviourTree.Node```.
+In your behaviour tree, you have to implement ```BuildTree()```, and make sure to call ```base.Start()```.
+```c#
+public class ExampleBehaviourTree : BehaviourTree
+{
+    // Necessary function to set up the tree
+    protected override Node BuildTree()
+    {
+        Sequencer rootSequencer = new Sequencer("Root");
+        // Adding custom nodes, passing along the necessary references
+        rootSequencer.Attatch(new ExampleNode("Example node", GetComponent<Component1>(), GetComponent<Component2>()));
+        Selector selector1 = (Selector) rootSequencer.Attatch(new Selector("Selector 1"));
+        // Build the rest of your tree like that...
+        // Return the root
+        return rootSequencer;
+    }
+    // Make sure you run base.Start()
+    protected override void Start()
+    {
+        base.Start();
+        // Custom start code here...
+    }
+
+    void Update() => EvaluateTree(Time.deltaTime);
+}
+```
+For nodes you need only to implement ```EvaluateProccess(float deltaTime)```.
+```c#
+public class ExampleNode : BehaviourTree.Node
+{
+    public ExampleNode(string name, Component1 component1, Component2 component2) : base(name)
+    {
+        // Getting all the necessary references for the node to work...
+    }
+    protected override State EvaluateProccess(float deltaTime)
+    {
+        // Custom execution code here...
+        // Then return SUCCESS, FAILURE, or IN_PROGRESS
+        return State.SUCCESS;
+    }
+    }
+```
 
 ## Event Bus
