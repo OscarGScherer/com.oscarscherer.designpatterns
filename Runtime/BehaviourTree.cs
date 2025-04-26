@@ -16,6 +16,11 @@ namespace DesignPatterns
 
         public Node root;
 
+        protected virtual void Start()
+        {
+            root = BuildTree();   
+        }
+
         /// <summary>
         /// Gets the height of the tree recursively. Used only to draw the custom inspector.
         /// </summary>
@@ -57,7 +62,7 @@ namespace DesignPatterns
         /// </summary>
         protected void EvaluateTree(float deltaTime)
         {
-            if(root == null) root = BuildTree();
+            if(root == null) return;
             #if UNITY_EDITOR
                 ResetNodeLastStateRecursive(root);
             #endif

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System;
 
-namespace DesignPatterns
+namespace DesignPatterns.StateMachine
 {
     [CustomEditor(typeof(StateMachine), true)]
     public class StateMachineEditor : Editor
@@ -40,7 +40,7 @@ namespace DesignPatterns
             showSelectedNodeFields = CustomEditorUtilities.DisplayTargetFieldsWithReflection(sm.currentState, showSelectedNodeFields);
             showSelectedNodeProperties = CustomEditorUtilities.DisplayTargetPropertiesWithReflection(sm.currentState, showSelectedNodeProperties);
 
-            EditorGUILayout.TextArea(sm.currentState.ToDebugString(), textArea);
+            EditorGUILayout.LabelField(sm.currentState.ToDebugString(), textArea);
         }
     }
 }
