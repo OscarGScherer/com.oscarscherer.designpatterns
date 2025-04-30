@@ -20,63 +20,9 @@ namespace DesignPatterns
             public UnityEvent<T> unityEvent = new();
             public List<T> eventHistory = new List<T>();
             public BusEvent(string name) => this.name = name;
-            public BusEvent() => this.name = "unnamed";
         }
 
         private static Dictionary<string, BusEvent> namedEvents = new();
-        private static Dictionary<Type, BusEvent> generalEvents = new();
-
-        //===================================================================//
-        // TYPE EVENTS                                                       //
-        //===================================================================//
-
-        /// <summary>
-        /// Registers to some event tied to the given type T.
-        /// </summary>
-        /// <param name="action">
-        /// The action to add as listener.
-        /// </param>
-        /// <param name="getUpToDateWithEventHistory">
-        /// Whether to immediatly call the action will all the parameters already raised prior to this action being registered.
-        /// </param>
-        public static void RegisterToGeneralEvent(UnityAction<T> action, bool getUpToDateWithEventHistory = false)
-        {
-            if(!generalEvents.ContainsKey(typeof(T))) generalEvents.Add(typeof(T), new BusEvent());
-            if(getUpToDateWithEventHistory)
-            {
-                foreach(T t in generalEvents[typeof(T)].eventHistory)
-                    action.Invoke(t);
-            }
-            generalEvents[typeof(T)].unityEvent.AddListener(action);
-        }
-        /// <summary>
-        /// Unregister to the event tied to the type T.
-        /// </summary>
-        /// <param name="action">Action to remove as listener.</param>
-        public static void UnregisterFromGeneralEvent(UnityAction<T> action)
-        {
-            if(!generalEvents.ContainsKey(typeof(T))) return;
-            generalEvents[typeof(T)].unityEvent.RemoveListener(action);
-        }
-        /// <summary>
-        /// Raise the event tied to the type T, passing along the given param.
-        /// </summary>
-        /// <param name="param">
-        /// The parameter that will be passed to all listeners.
-        /// </param>
-        /// <param name="addToEventHistory">
-        /// Whether to add the given param to the event raise history .
-        /// </param>
-        public static void RaiseGeneralEvent(T param, bool addToEventHistory = false)
-        {
-            if(!generalEvents.ContainsKey(typeof(T))) generalEvents.Add(typeof(T), new BusEvent());
-            if(addToEventHistory) generalEvents[typeof(T)].eventHistory.Add(param);
-            generalEvents[typeof(T)].unityEvent.Invoke(param);
-        }
-        
-        //===================================================================//
-        // NAMED EVENTS                                                      //
-        //===================================================================//
 
         /// <summary>
         /// Register to some event tied to eventName and the type T.
@@ -86,7 +32,7 @@ namespace DesignPatterns
         /// <param name="getUpToDateWithEventHistory">
         /// Whether to immediatly call the action will all the parameters already raised prior to this action being registered.
         /// </param>
-        public static void RegisterToNamedEvent(string eventName, UnityAction<T> action, bool getUpToDateWithEventHistory = false)
+        public static void RegisterToEvent(string eventName, UnityAction<T> action, bool getUpToDateWithEventHistory = false)
         {
             eventName = typeof(T) + ":" + eventName;
             if(!namedEvents.ContainsKey(eventName)) namedEvents.Add(eventName, new BusEvent(eventName));
@@ -102,7 +48,7 @@ namespace DesignPatterns
         /// </summary>
         /// <param name="eventName"> The name of the event. </param>
         /// <param name="action">Action to remove as listener.</param>
-        public static void UnregisterFromNamedEvent(string eventName, UnityAction<T> action)
+        public static void UnregisterFromEvent(string eventName, UnityAction<T> action)
         {
             eventName = typeof(T) + ":" + eventName;
             if(!namedEvents.ContainsKey(eventName)) return;
@@ -118,7 +64,7 @@ namespace DesignPatterns
         /// <param name="addToEventHistory">
         /// Whether to add the given param to the event raise history.
         /// </param>
-        public static void RaiseNamedEvent(string eventName, T param, bool addToEventHistory = false)
+        public static void RaiseEvent(string eventName, T param, bool addToEventHistory = false)
         {
             eventName = typeof(T) + ":" + eventName;
             if(!namedEvents.ContainsKey(eventName)) namedEvents.Add(eventName, new BusEvent(eventName));
