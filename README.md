@@ -144,3 +144,26 @@ specific nodes to inpect them. You can also override ```ToDebugString()``` on an
 
 
 ## Event Bus
+
+Lets any class in your project register or raise events, it serves as a middleman between system's you don't want to couple directly.
+To use it, you just need to call ```EventBus<T>.RaiseEvent```, ```EventBus<T>.RegisterToEvent```, and ```EventBus<T>.UnregisterFromEvent```.
+
+```c#
+public class ClassA : MonoBehaviour
+{
+    void Start()
+    {
+        EventBus<string>.RegisterToEvent("Example event", ExampleFunction);
+    }
+
+    void ExampleFunction(string message) => Debug.Log(message);
+}
+
+public class ClassB : MonoBehaviour
+{
+    void SomePreccess()
+    {
+        EventBus<string>.RaiseEvent("Example event", "Raised event!");
+    }
+}
+```
