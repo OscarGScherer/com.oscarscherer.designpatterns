@@ -95,7 +95,10 @@ You can also override ```ToDebugString()``` inside state to print some custom de
 # Behaviour Tree
 
 To create a behaviour tree, you need to inherit from ```BehaviourTree```. And to make a node, you inherit from ```BehaviourTree.Node```.
-In your behaviour tree, you have to implement ```BuildTree()```, and make sure to call ```base.Start()```.
+In your behaviour tree, you have to implement ```BuildTree()```, and make sure to call ```base.Start()```. You have ```Sequencer``` and ```Selector``` types
+to build your tree. Sequencer's execute all its children and returns "success" when all of them succeed, and returns early with "failure" or "in progress",
+as soon as one of its children returns one of those states. Selectors returns "success" or "in progress", as soon as any of its children return on of these
+states, and return "failure" if all of its children fail.
 ```c#
 public class ExampleBehaviourTree : BehaviourTree
 {
@@ -110,17 +113,15 @@ public class ExampleBehaviourTree : BehaviourTree
         // Return the root
         return rootSequencer;
     }
-    // Make sure you run base.Start()
-    protected override void Start()
-    {
-        base.Start();
-        // Custom start code here...
-    }
 
+    // Make sure you call InitializeTree() before you execute the tree
+    void Start() => InitializeTree();
+
+    // Executing the tree every frame
     void Update() => EvaluateTree(Time.deltaTime);
 }
 ```
-For nodes you need only to implement ```EvaluateProccess(float deltaTime)```.
+For nodes you need only to implement ```EvaluateProccess(float deltaTime)```, which needs to return ```State.SUCCESS```, ```State.FAILURE```, ```State.IN_PROGRESS```.
 ```c#
 public class ExampleNode : BehaviourTree.Node
 {
@@ -134,7 +135,12 @@ public class ExampleNode : BehaviourTree.Node
         // Then return SUCCESS, FAILURE, or IN_PROGRESS
         return State.SUCCESS;
     }
-    }
+}
 ```
+The custom inspector lets you visualize the current execution state of the behaviour tree, and select
+specific nodes to inpect them. You can also override ```ToDebugString()``` on any of your nodes to print some custom debug info.
+
+![image](https://github.com/user-attachments/assets/1cd0c8e8-e0ac-4047-9014-22285d682ab7)
+
 
 ## Event Bus
