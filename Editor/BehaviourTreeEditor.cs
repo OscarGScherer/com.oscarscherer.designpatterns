@@ -127,25 +127,26 @@ namespace DesignPatterns
             treeViewerNodes.Clear();
             DrawTreeRecursive(bt.root, nodeWidth, nodeHeight, hSpacing, nodeVSpacing, Mathf.Clamp(8f * bt.treeViewerScale, 0f, 6f));
 
-            // Handling ui clicks
-            Event currentEvent = Event.current;
-            if (currentEvent.type == EventType.MouseDown)
-            {
-                foreach((Rect,BehaviourTree.Node) treeNode in treeViewerNodes)
-                {
-                    Rect clickArea = treeNode.Item1;
-                    if (clickArea.Contains(currentEvent.mousePosition))
-                    {
-                        currentEvent.Use();
-                        bt.selectedNode = treeNode.Item2;
+            // // Handling ui clicks
+            // Event currentEvent = Event.current;
+            // if (currentEvent.type == EventType.MouseDown)
+            // {
+            //     foreach((Rect,BehaviourTree.Node) treeNode in treeViewerNodes)
+            //     {
+            //         Rect clickArea = treeNode.Item1;
+            //         if (clickArea.Contains(currentEvent.mousePosition))
+            //         {
+            //             currentEvent.Use();
+            //             bt.selectedNode = treeNode.Item2;
 
-                        int state = (int)bt.selectedNode.lastState + 1;
-                        state = state > 2 ? -1 : state;
-                        bt.selectedNode.lastState = (BehaviourTree.Node.State) state;
-                        break;
-                    }
-                }
-            }
+            //             int state = (int)bt.selectedNode.lastState + 1;
+            //             state = state > 2 ? -1 : state;
+            //             bt.selectedNode.lastState = (BehaviourTree.Node.State) state;
+            //             break;
+            //         }
+            //     }
+            // }
+
             Handles.EndGUI();
             EditorGUILayout.EndScrollView();
         }
@@ -176,8 +177,8 @@ namespace DesignPatterns
 
             if(node.children.Count == 0) return height + 1;
             Vector2 linePosition = position + new Vector2(nodeXSize,nodeYSize/2f);
-
-            DrawHorizontalLine(NodeStateToColor(node.GetHighestPriorityStateInChildren(0)), linePosition, lineThickness, hSpace/2f + lineThickness);
+ 
+            DrawHorizontalLine(NodeStateToColor(node.GetLastNotNoneStateInChildren(0)), linePosition, lineThickness, hSpace/2f + lineThickness);
             linePosition += Vector2.right * hSpace / 2f;
             
             int prevHeigh = height;
@@ -189,7 +190,7 @@ namespace DesignPatterns
 
                 if(i == node.children.Count - 1) break;
 
-                Color verticalLineColor = NodeStateToColor(node.GetHighestPriorityStateInChildren(i+1));
+                Color verticalLineColor = NodeStateToColor(node.GetLastNotNoneStateInChildren(i+1));
                 DrawVerticalLine(verticalLineColor, linePosition + new Vector2(0,lineThickness), lineThickness, (nodeYSize + vSpace) * (height - prevHeigh));
                 linePosition += Vector2.up * (nodeYSize + vSpace) * (height - prevHeigh);
 

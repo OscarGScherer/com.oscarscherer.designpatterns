@@ -16,7 +16,7 @@ namespace DesignPatterns
 
         public Node root;
 
-        protected virtual void Start()
+        protected void InitializeTree()
         {
             root = BuildTree();   
         }
@@ -84,15 +84,13 @@ namespace DesignPatterns
             /// Only used for drawing the custom inspector, the priority is only used to determine
             /// which color is drawn when the lines merge (gree, red, or blue)
             /// </summary>
-            public State GetHighestPriorityStateInChildren(int startIndex)
+            public State GetLastNotNoneStateInChildren(int startIndex)
             {
-                State highestPriorityState = State.NONE;
-                for(int i = startIndex; i < children.Count; i++)
+                for(int i = children.Count - 1; i >= startIndex; i--)
                 {
-                    if((int)children[i].lastState > (int)highestPriorityState)
-                        highestPriorityState = children[i].lastState;
+                    if(children[i].lastState != State.NONE) return children[i].lastState;
                 }
-                return highestPriorityState;
+                return State.NONE;
             }
 
             public Node(string name) => this.name = name;
