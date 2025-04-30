@@ -1,15 +1,14 @@
 # Unity Design Patters
 Generic implementations of commonly used design patterns.
 
-## Patterns
-**Implemented:**
+**How to use**
 * [Singleton](#singleton)
 * [State Machine](#state-machine)
 * [Behaviour Tree](#behaviour-tree)
 * [Event Bus](#event-bus)
 
-**Planned:**
-* Scriptable Object Variables and Events
+**Other**
+* [How to install](#how-to-install)
 
 # Singleton
 To create a singleton, simply inherit from ```Singleton```. Note that if you want to use OnEnable and OnDisable, you must override the existing methods and call the base implementation for both, since those are used to keep track of each Singleton type.
@@ -167,3 +166,12 @@ public class ClassB : MonoBehaviour
     }
 }
 ```
+
+## How to install
+1. Open package manager
+2. Click on '+', on the top left corner
+3. Select Install package from git URL
+4. Paste this link: https://github.com/OscarGScherer/Unity-Design-Patterns.git
+  
+For a more detaield explanation, check this documentation page:
+* https://docs.unity3d.com/6000.0/Documentation/Manual/upm-ui-giturl.html
