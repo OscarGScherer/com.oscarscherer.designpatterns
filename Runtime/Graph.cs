@@ -6,21 +6,41 @@ namespace DesignPatterns
 {
     namespace Graph
     {
-        public class Graph
+        /// <summary>
+        /// Base class for graphs, featuring baked in pathfinding.
+        /// </summary>
+        /// <typeparam name="N">The type of data that is stored in your nodes</typeparam>
+        /// <typeparam name="E">The type of data that is stored in your edges</typeparam>
+        public class Graph<N,E>
         {
-            private List<Node> nodes;
-            private List<Edge> edges;
+            private List<Node<N>> nodes;
+            private List<Edge<E>> edges;
             private int[,] paths;
 
             public Graph(int numNodes)
             {
-                nodes = new List<Node>(numNodes);
-                edges = new List<Edge>(numNodes*2);
+                nodes = new List<Node<N>>(numNodes);
+                edges = new List<Edge<E>>(numNodes*2);
             }
 
-            public void AddNode(Node node)
+            /// <summary> Adds a node to the graph, with the given content and position. </summary>
+            public void AddNode(N nodeItem, Vector3? position = null)
             {
-                nodes.Add(node);
+                nodes.Add(new Node<N>(nodes.Count, position, nodeItem));
+            }
+            /// <summary> Adds edge between two existing nodes in the graph, finds the nodes by their content. </summary>
+            public bool AddEdge(N a, N b, E e)
+            {
+                Node<N> nodeA = nodes.FirstOrDefault((n)=>n.nodeItem.Equals(a));
+                Node<N> nodeB = nodes.FirstOrDefault((n)=>n.nodeItem.Equals(b));
+                return AddEdge(nodeA, nodeB, e);
+            }
+            /// <summary> Helper function to add edges to the graph. </summary>
+            private bool AddEdge(Node<N> nodeA, Node<N> nodeB, E e)
+            {
+                if(nodeA == null || nodeB == null) return false;
+                edges.Add(new Edge<E>(nodeA, nodeB, e));
+                return true;
             }
 
             private void UpdatePaths()
@@ -38,23 +58,24 @@ namespace DesignPatterns
 
             /// <summary>
             /// Generates a random graph with the given number of nodes.
+            /// Unused.
             /// </summary>
-            public static Graph GenerateRandom(int numNodes)
+            public static Graph<N,E> GenerateRandom(int numNodes)
             {
                 numNodes = numNodes < 0 ? 0 : numNodes;
 
-                Graph graph = new Graph(numNodes);
+                Graph<N,E> graph = new Graph<N,E>(numNodes);
                 // Adding nodes
                 for(int n = 0; n < numNodes; n++)
                 {
-                    graph.nodes.Add(new Node(n));
+                    graph.nodes.Add(new Node<N>(n, null, default));
                 }
 
                 // If there are 1 or 0 nodes, there aren't any edges, return
                 if(numNodes <= 1) return graph;
 
                 // Setting edges
-                NodeGroups nodeGroups = new NodeGroups(graph.nodes);
+                NodeGroups<Node<N>> nodeGroups = new NodeGroups<Node<N>>(graph.nodes);
                 while(nodeGroups.numGroups > 1)
                 {
                     int a = Random.Range(0,graph.nodes.Count);
@@ -64,7 +85,7 @@ namespace DesignPatterns
                         b += Random.Range(0f,1f) > 0.5f ? 1 : -1;
                         b = b > graph.nodes.Count - 1 ? 0 : b < 0 ? graph.nodes.Count - 1 : b;
                     }
-                    Edge edge = new Edge(graph.nodes[a], graph.nodes[b]);
+                    Edge<E> edge = new Edge<E>(graph.nodes[a], graph.nodes[b], default);
                     nodeGroups.AddEdge(edge);
                 }
 
@@ -73,38 +94,39 @@ namespace DesignPatterns
 
                 return graph;
             }
+        }
 
-            private class NodeGroups
+        public class NodeGroups<N> where N : Node
+        {
+            private List<List<Node>> nodeGroups = new List<List<Node>>();
+            public int numGroups => nodeGroups.Count;
+
+            public NodeGroups(List<N> nodes)
             {
-                private List<List<Node>> nodeGroups = new List<List<Node>>();
-                public int numGroups => nodeGroups.Count;
+                nodes.ForEach((n)=>nodeGroups.Add(new List<Node>(){n}));
+            }
 
-                public NodeGroups(List<Node> nodes)
+            /// <summary> Merge's the edge's a node group with the edge's b node group </summary>
+            public void AddEdge(Edge edge)
+            {
+                List<Node> groupWithA = nodeGroups.FirstOrDefault((g)=>g.Contains(edge.A)) ?? new List<Node>(){edge.A};
+                nodeGroups.Remove(groupWithA);
+                List<Node> groupWithB = nodeGroups.FirstOrDefault((g)=>g.Contains(edge.B));
+                if(groupWithB == null)
                 {
-                    nodes.ForEach((n)=>nodeGroups.Add(new List<Node>(){n}));
+                    groupWithB = new List<Node>(){edge.B};
+                    nodeGroups.Add(groupWithB);
                 }
-
-                /// <summary> Merge's the edge's a node group with the edge's b node group </summary>
-                public void AddEdge(Edge edge)
-                {
-                    List<Node> groupWithA = nodeGroups.FirstOrDefault((g)=>g.Contains(edge.A)) ?? new List<Node>(){edge.A};
-                    nodeGroups.Remove(groupWithA);
-                    List<Node> groupWithB = nodeGroups.FirstOrDefault((g)=>g.Contains(edge.B));
-                    if(groupWithB == null)
-                    {
-                        groupWithB = new List<Node>(){edge.B};
-                        nodeGroups.Add(groupWithB);
-                    }
-                    groupWithB.AddRange(groupWithA);
-                }
+                groupWithB.AddRange(groupWithA);
             }
         }
 
-        public class Edge
+        public abstract class Edge
         {
             public Node A,B;
             public float length;
-            public float distance;
+            /// <summary> Just a shorthand. It assumes n is A or B. </summary>
+            public Node Adjacent(Node n) => n == A ? B : A; 
             public Edge(Node a, Node b)
             {
                 A = a;
@@ -112,29 +134,46 @@ namespace DesignPatterns
                 a.edges.Add(this);
                 b.edges.Add(this);
             }
-            /// <summary> Just a shorthand. It assumes n is A or B. </summary>
-            public Node Adjacent(Node n) => n == A ? B : A; 
         }
 
-        public class Node
+        public class Edge<E> : Edge
+        {
+            public E edgeItem;
+            public Edge(Node a, Node b, E edgeItem) : base(a,b)
+            {
+                this.edgeItem = edgeItem;
+            }
+        }
+
+        public abstract class Node
         {
             public Vector3 position;
             public int index;
             public List<Edge> edges = new List<Edge>();
-
-            public Node(int index)
-            {
-                this.index = index;
-            }
-
             public int GetNumAdjacentNodes() => edges.Count;
 
-            /// <returns> All nodes ajacent to this one. </returns>
-            public List<Node> GetAdjacent()
+            public Node(int index, Vector3? position)
             {
-                List<Node> adjacentNodes = new List<Node>(edges.Count);
-                foreach(Edge edge in edges) adjacentNodes.Add(edge.A == this ? edge.B : edge.A);
-                return adjacentNodes;
+                this.index = index;
+                this.position = position ?? Vector3.zero;
+            }
+
+            // /// <returns> All nodes ajacent to this one. </returns>
+            // public List<Node<N,E>> GetAdjacent()
+            // {
+            //     List<Node<N,E>> adjacentNodes = new List<Node<N,E>>(edges.Count);
+            //     foreach(Edge<N,E> edge in edges) adjacentNodes.Add(edge.A == this ? edge.B : edge.A);
+            //     return adjacentNodes;
+            // }
+
+        }
+
+        public class Node<N> : Node
+        {
+            public N nodeItem;
+            public Node(int index, Vector3? position, N nodeItem) : base(index, position)
+            {
+                this.nodeItem = nodeItem;
             }
         }
     }
