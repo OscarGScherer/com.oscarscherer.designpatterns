@@ -13,8 +13,8 @@ namespace DesignPatterns
         /// <typeparam name="E">The type of data that is stored in your edges</typeparam>
         public class Graph<N,E>
         {
-            private List<Node<N>> nodes;
-            private List<Edge<E>> edges;
+            public List<Node<N>> nodes;
+            public List<Edge<E>> edges;
             private int[,] paths;
 
             public Graph(int numNodes)
