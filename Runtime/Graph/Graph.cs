@@ -28,6 +28,12 @@ namespace DesignPatterns
             {
                 nodes.Add(new Node<N>(nodes.Count, position, nodeItem));
             }
+            /// <summary> Adds edge between two existing nodes in the graph, finds the nodes by their index. </summary>
+            public bool AddEdge(int aInd, int bInd, E e)
+            {
+                if(!nodes.ValidIndex(aInd) || !nodes.ValidIndex(bInd)) return false;
+                return AddEdge(nodes[aInd], nodes[bInd], e);
+            }
             /// <summary> Adds edge between two existing nodes in the graph, finds the nodes by their content. </summary>
             public bool AddEdge(N a, N b, E e)
             {
@@ -38,7 +44,7 @@ namespace DesignPatterns
             /// <summary> Helper function to add edges to the graph. </summary>
             private bool AddEdge(Node<N> nodeA, Node<N> nodeB, E e)
             {
-                if(nodeA == null || nodeB == null) return false;
+                if(nodeA == null || nodeB == null || nodeA == nodeB) return false;
                 edges.Add(new Edge<E>(nodeA, nodeB, e));
                 return true;
             }

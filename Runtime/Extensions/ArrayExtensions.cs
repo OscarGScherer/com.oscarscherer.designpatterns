@@ -3,8 +3,10 @@ using UnityEngine;
 
 namespace DesignPatterns
 {
-    public static class CollectionsExtensions
+    public static class ArrayExtensions
     {
+        /// <summary> Returns true if the index is inside the bounds of the array. </summary>
+        public static bool ValidIndex<T>(this T[] array, int index) => index >= 0 && index < array.Length;
         /// <summary>
         /// Makes an array of the given length, with all indexes initialized with the value
         /// </summary>
