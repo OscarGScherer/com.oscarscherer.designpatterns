@@ -16,6 +16,7 @@ namespace DesignPatterns
             public List<Node<N>> nodes;
             public List<Edge<E>> edges;
             private int[,] paths;
+            private float[,] distances;
 
             public Graph(int numNodes)
             {
@@ -52,12 +53,14 @@ namespace DesignPatterns
             private void UpdatePaths()
             {
                 paths = new int[nodes.Count, nodes.Count];
+                distances = new float[nodes.Count, nodes.Count];
                 for(int i = 0; i < nodes.Count; i++)
                 {
-                    int[] pathsFromI = Dijkstra.Pathfind(nodes[i], nodes);
+                    (int,float)[] pathInfo = Dijkstra.Pathfind(nodes[i], nodes);
                     for(int j = 0; j < nodes.Count; i++)
                     {
-                        paths[i,j] = pathsFromI[j];
+                        paths[i,j] = pathInfo[j].Item1;
+                        distances[i,j] = pathInfo[j].Item2;
                     }
                 }
             }

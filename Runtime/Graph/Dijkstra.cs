@@ -7,22 +7,22 @@ namespace DesignPatterns
     {
         public class Dijkstra
         {
-            public static int[] Pathfind<N>(N startNode, List<N> nodes) where N : Node
+            /// <summary>
+            /// Returns an array containing the first move you need to make in order to move from the startNode to all other nodes,
+            ///  and the distances to all other nodes.
+            public static (int,float)[] Pathfind<N>(N startNode, List<N> nodes) where N : Node
             {
-                int[] pathOrigins = (-1).RepeatForArray(nodes.Count);
                 bool[] visited = false.RepeatForArray(nodes.Count);
-                float[] distances = Mathf.Infinity.RepeatForArray(nodes.Count);
+                (int,float)[] paths = (-1, Mathf.Infinity).RepeatForArray(nodes.Count);
 
-                distances[startNode.index] = 0f;
-                pathOrigins[startNode.index] = startNode.index;
+                paths[startNode.index] = (startNode.index, 0f);
                 visited[startNode.index] = true;
 
-                Heap<Node> unvisitedNodes = new Heap<Node>(nodes.Count, (n1,n2) => distances[n1.index] < distances[n2.index]);
+                Heap<Node> unvisitedNodes = new Heap<Node>(nodes.Count, (n1,n2) => paths[n1.index].Item2 < paths[n2.index].Item2);
                 foreach(Edge edge in startNode.edges)
                 {
                     Node adj = edge.Adjacent(startNode);
-                    distances[adj.index] = distances[startNode.index] + edge.length;
-                    pathOrigins[adj.index] = adj.index;
+                    paths[adj.index] = (adj.index, paths[adj.index].Item2 + edge.length);
                     unvisitedNodes.Insert(adj);
                 }
 
@@ -33,11 +33,10 @@ namespace DesignPatterns
                     foreach(Edge edge in curr.edges)
                     {
                         Node adj = edge.Adjacent(curr);
-                        float newDistance = distances[curr.index] + edge.length;
-                        if(distances[adj.index] > newDistance)
+                        float newDistance = paths[curr.index].Item2 + edge.length;
+                        if(paths[adj.index].Item2 > newDistance)
                         {
-                            distances[adj.index] = newDistance;
-                            pathOrigins[adj.index] = pathOrigins[curr.index];
+                            paths[adj.index] = (paths[curr.index].Item1, newDistance);
                         }
                         // Adding to heap
                         if(!visited[adj.index]) unvisitedNodes.Insert(adj);
@@ -45,7 +44,7 @@ namespace DesignPatterns
                 }
                 
                 // Setting up paths
-                return pathOrigins;
+                return paths;
             }
         }
     }
