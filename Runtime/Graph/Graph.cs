@@ -43,10 +43,10 @@ namespace DesignPatterns
                 return AddEdge(nodeA, nodeB, e);
             }
             /// <summary> Helper function to add edges to the graph. </summary>
-            private bool AddEdge(Node<N> nodeA, Node<N> nodeB, E e)
+            private bool AddEdge(Node<N> nodeA, Node<N> nodeB, E e, float? length = null)
             {
                 if(nodeA == null || nodeB == null || nodeA == nodeB) return false;
-                edges.Add(new Edge<E>(nodeA, nodeB, e));
+                edges.Add(length == null ? new Edge<E>(nodeA, nodeB, e) : new Edge<E>(nodeA, nodeB, length.Value, e));
                 return true;
             }
 
@@ -132,14 +132,25 @@ namespace DesignPatterns
 
         public abstract class Edge
         {
-            public Node A,B;
+            public Node A, B;
             public float length;
             /// <summary> Just a shorthand. It assumes n is A or B. </summary>
-            public Node Adjacent(Node n) => n == A ? B : A; 
+            public Node Adjacent(Node n) => n == A ? B : A;
+            /// <summary> Creates an edge between a and b, using the position of the nodes to infer the edge length. </summary>
             public Edge(Node a, Node b)
             {
                 A = a;
                 B = b;
+                length = Vector3.Distance(A.position, B.position);
+                a.edges.Add(this);
+                b.edges.Add(this);
+            }
+            /// <summary> Creates an edge between a and b, with the given length. </summary>
+            public Edge(Node a, Node b, float length)
+            {
+                A = a;
+                B = b;
+                this.length = length;
                 a.edges.Add(this);
                 b.edges.Add(this);
             }
@@ -148,7 +159,11 @@ namespace DesignPatterns
         public class Edge<E> : Edge
         {
             public E edgeItem;
-            public Edge(Node a, Node b, E edgeItem) : base(a,b)
+            public Edge(Node a, Node b, E edgeItem) : base(a, b)
+            {
+                this.edgeItem = edgeItem;
+            }
+            public Edge(Node a, Node b, float length, E edgeItem) : base(a,b,length)
             {
                 this.edgeItem = edgeItem;
             }
