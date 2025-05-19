@@ -33,9 +33,9 @@ namespace DesignPatterns
             }
             public void AddEdge(N aContent, N bContent, E edgeContent)
             {
-                Node<N,E> A = nodes.FirstOrDefault((n) => n.nodeContent.Equals(aContent));
+                Node<N,E> A = nodes.FirstOrDefault((n) => n.content.Equals(aContent));
                 if (A == null) return;
-                Node<N,E> B = nodes.FirstOrDefault((n) => n.nodeContent.Equals(bContent));
+                Node<N,E> B = nodes.FirstOrDefault((n) => n.content.Equals(bContent));
                 if (B == null) return;
                 AddEdge(A, B, edgeContent);
             }
@@ -137,29 +137,32 @@ namespace DesignPatterns
 
         public interface IEdgeContent
         {
+            public virtual void SetEdge<N, E>(Edge<N, E> edge) where N : INodeContent where E : IEdgeContent { }
             public float length { get; }
         }
 
-        public class Edge<N,E>
+        public class Edge<N, E>
         where E : IEdgeContent
         where N : INodeContent
         {
-            public Node<N,E> A, B;
-            public E edgeContent;
-            public float length => edgeContent.length;
+            public Node<N, E> A, B;
+            public E content;
+            public float length => content.length;
 
-            public Node<N,E> Adjacent(Node<N,E> n) => n == A ? B : A;
+            public Node<N, E> Adjacent(Node<N, E> n) => n == A ? B : A;
 
-            public Edge(Node<N,E> A, Node<N,E> B, E edgeContent)
+            public Edge(Node<N, E> A, Node<N, E> B, E content)
             {
                 this.A = A;
                 this.B = B;
-                this.edgeContent = edgeContent;
+                this.content = content;
+                content.SetEdge(this);
             }
         }
 
         public interface INodeContent
         {
+            public virtual void SetNode<N, E>(Node<N, E> edge) where N : INodeContent where E : IEdgeContent { }
             public Vector3 position { get; }
         }
 
@@ -169,13 +172,14 @@ namespace DesignPatterns
         {
             public int index;
             public List<Edge<N,E>> edges = new List<Edge<N,E>>();
-            public Vector3 position => nodeContent.position;
-            public N nodeContent;
+            public Vector3 position => content.position;
+            public N content;
 
-            public Node(int index, N nodeContent)
+            public Node(int index, N content)
             {
                 this.index = index;
-                this.nodeContent = nodeContent;
+                this.content = content;
+                content.SetNode(this);
             }
 
             public int GetNumAdjacentNodes() => edges.Count;
