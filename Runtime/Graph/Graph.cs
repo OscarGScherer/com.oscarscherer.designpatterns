@@ -12,28 +12,43 @@ namespace DesignPatterns
         /// <typeparam name="N">The type of data that is stored in your nodes</typeparam>
         /// <typeparam name="E">The type of data that is stored in your edges</typeparam>
         public class Graph<N, E>
-        where N : Node
-        where E : Edge
+        where N : INodeContent
+        where E : IEdgeContent
         {
-            public List<N> nodes;
-            public List<E> edges;
+            public List<Node<N>> nodes;
+            public List<Edge<E>> edges;
             private int[,] paths;
             private float[,] distances;
 
             public Graph(int numNodes)
             {
-                nodes = new List<N>(numNodes);
-                edges = new List<E>(numNodes * 2);
+                nodes = new List<Node<N>>(numNodes);
+                edges = new List<Edge<E>>(numNodes * 2);
             }
 
-            public void AddNode(N node)
+            public Node<N> AddNode(N nodeContent)
             {
-                nodes.Add(node);
+                nodes.Add(new Node<N>(nodes.Count, nodeContent));
+                return nodes[nodes.Count - 1];
             }
-            public void AddEdge(E edge)
+            public void AddEdge(N aContent, N bContent, E edgeContent)
             {
-                if (!nodes.Contains(edge.A) || !nodes.Contains(edge.B)) return;
-                edges.Add(edge);
+                Node<N> A = nodes.FirstOrDefault((n) => n.nodeContent.Equals(aContent));
+                if (A == null) return;
+                Node<N> B = nodes.FirstOrDefault((n) => n.nodeContent.Equals(bContent));
+                if (B == null) return;
+                AddEdge(A, B, edgeContent);
+            }
+            public void AddEdge(int aInd, int bInd, E edgeContent)
+            {
+                if (!nodes.ValidIndex(aInd) || !nodes.ValidIndex(bInd)) return;
+                AddEdge(nodes[aInd], nodes[bInd], edgeContent);
+            }
+            public void AddEdge(Node<N> A, Node<N> B, E edgeContent)
+            {
+                if (!nodes.Contains(A) || !nodes.Contains(B)) return;
+                edges.Add(new Edge<E>(A, B, edgeContent));
+                Edge<E> edge = edges[edges.Count - 1];
                 edge.A.edges.Add(edge);
                 edge.B.edges.Add(edge);
             }
@@ -118,36 +133,59 @@ namespace DesignPatterns
             }
         }
 
+        public interface IEdgeContent
+        {
+            public float length { get; }
+        }
+
         public abstract class Edge
         {
-            public Node A { private set; get; }
-            public Node B { private set; get; }
-
-            public float length;
-
+            public Node A, B;
+            public virtual float length => 0f;
             /// <summary> Just a shorthand. It assumes n is A or B. </summary>
             public Node Adjacent(Node n) => n == A ? B : A;
-            /// <summary> Creates an edge between a and b, with the given length. </summary>
-            public Edge(Node a, Node b, float? length = null)
+            public Edge(Node A, Node B)
             {
-                A = a;
-                B = b;
-                this.length = length == null ? Vector3.Distance(A.position,B.position) : length.Value;
+                this.A = A;
+                this.B = B;
             }
+        }
+
+        public class Edge<E> : Edge
+        where E : IEdgeContent
+        {
+            public E edgeContent;
+            public override float length => edgeContent.length;
+            /// <summary> Creates an edge between a and b, with the given length. </summary>
+            public Edge(Node A, Node B, E edgeContent) : base(A, B)
+            {
+                this.edgeContent = edgeContent;
+            }
+        }
+
+        public interface INodeContent
+        {
+            public Vector3 position { get; }
         }
 
         public abstract class Node
         {
-            public int index { private set; get; }
-            public List<Edge> edges { private set; get; }
+            public int index;
+            public List<Edge> edges = new List<Edge>();
+            public virtual Vector3 position => Vector3.zero;
+            public Node(int index) => this.index = index;
+        }
 
-            public Vector3 position;
+        public class Node<N> : Node
+        where N : INodeContent
+        {
+            public override Vector3 position => nodeContent.position;
 
-            public Node(int index, Vector3? position)
+            public N nodeContent;
+
+            public Node(int index, N nodeContent) : base(index)
             {
-                this.index = index;
-                this.position = position ?? Vector3.zero;
-                edges = new List<Edge>();
+                this.nodeContent = nodeContent;
             }
 
             public int GetNumAdjacentNodes() => edges.Count;
