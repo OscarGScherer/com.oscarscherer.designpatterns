@@ -15,27 +15,27 @@ namespace DesignPatterns
         where N : INodeContent
         where E : IEdgeContent
         {
-            public List<Node<N>> nodes;
-            public List<Edge<E>> edges;
+            public List<Node<N,E>> nodes;
+            public List<Edge<N,E>> edges;
             private int[,] paths;
             private float[,] distances;
 
             public Graph(int numNodes)
             {
-                nodes = new List<Node<N>>(numNodes);
-                edges = new List<Edge<E>>(numNodes * 2);
+                nodes = new List<Node<N,E>>(numNodes);
+                edges = new List<Edge<N,E>>(numNodes * 2);
             }
 
-            public Node<N> AddNode(N nodeContent)
+            public Node<N,E> AddNode(N nodeContent)
             {
-                nodes.Add(new Node<N>(nodes.Count, nodeContent));
+                nodes.Add(new Node<N,E>(nodes.Count, nodeContent));
                 return nodes[nodes.Count - 1];
             }
             public void AddEdge(N aContent, N bContent, E edgeContent)
             {
-                Node<N> A = nodes.FirstOrDefault((n) => n.nodeContent.Equals(aContent));
+                Node<N,E> A = nodes.FirstOrDefault((n) => n.nodeContent.Equals(aContent));
                 if (A == null) return;
-                Node<N> B = nodes.FirstOrDefault((n) => n.nodeContent.Equals(bContent));
+                Node<N,E> B = nodes.FirstOrDefault((n) => n.nodeContent.Equals(bContent));
                 if (B == null) return;
                 AddEdge(A, B, edgeContent);
             }
@@ -44,11 +44,11 @@ namespace DesignPatterns
                 if (!nodes.ValidIndex(aInd) || !nodes.ValidIndex(bInd)) return;
                 AddEdge(nodes[aInd], nodes[bInd], edgeContent);
             }
-            public void AddEdge(Node<N> A, Node<N> B, E edgeContent)
+            public void AddEdge(Node<N,E> A, Node<N,E> B, E edgeContent)
             {
                 if (!nodes.Contains(A) || !nodes.Contains(B)) return;
-                edges.Add(new Edge<E>(A, B, edgeContent));
-                Edge<E> edge = edges[edges.Count - 1];
+                edges.Add(new Edge<N,E>(A, B, edgeContent));
+                Edge<N,E> edge = edges[edges.Count - 1];
                 edge.A.edges.Add(edge);
                 edge.B.edges.Add(edge);
             }
@@ -108,25 +108,27 @@ namespace DesignPatterns
             // }
         }
 
-        public class NodeGroups<N> where N : Node
+        public class NodeGroups<N,E>
+        where N : INodeContent
+        where E : IEdgeContent
         {
-            private List<List<Node>> nodeGroups = new List<List<Node>>();
+            private List<List<Node<N,E>>> nodeGroups = new List<List<Node<N,E>>>();
             public int numGroups => nodeGroups.Count;
 
-            public NodeGroups(List<N> nodes)
+            public NodeGroups(List<Node<N,E>> nodes)
             {
-                nodes.ForEach((n) => nodeGroups.Add(new List<Node>() { n }));
+                nodes.ForEach((n) => nodeGroups.Add(new List<Node<N,E>>() { n }));
             }
 
             /// <summary> Merge's the edge's a node group with the edge's b node group </summary>
-            public void AddEdge(Edge edge)
+            public void AddEdge(Edge<N,E> edge)
             {
-                List<Node> groupWithA = nodeGroups.FirstOrDefault((g) => g.Contains(edge.A)) ?? new List<Node>() { edge.A };
+                List<Node<N,E>> groupWithA = nodeGroups.FirstOrDefault((g) => g.Contains(edge.A)) ?? new List<Node<N,E>>() { edge.A };
                 nodeGroups.Remove(groupWithA);
-                List<Node> groupWithB = nodeGroups.FirstOrDefault((g) => g.Contains(edge.B));
+                List<Node<N,E>> groupWithB = nodeGroups.FirstOrDefault((g) => g.Contains(edge.B));
                 if (groupWithB == null)
                 {
-                    groupWithB = new List<Node>() { edge.B };
+                    groupWithB = new List<Node<N,E>>() { edge.B };
                     nodeGroups.Add(groupWithB);
                 }
                 groupWithB.AddRange(groupWithA);
@@ -138,27 +140,20 @@ namespace DesignPatterns
             public float length { get; }
         }
 
-        public abstract class Edge
+        public class Edge<N,E>
+        where E : IEdgeContent
+        where N : INodeContent
         {
-            public Node A, B;
-            public virtual float length => 0f;
-            /// <summary> Just a shorthand. It assumes n is A or B. </summary>
-            public Node Adjacent(Node n) => n == A ? B : A;
-            public Edge(Node A, Node B)
+            public Node<N,E> A, B;
+            public E edgeContent;
+            public float length => edgeContent.length;
+
+            public Node<N,E> Adjacent(Node<N,E> n) => n == A ? B : A;
+
+            public Edge(Node<N,E> A, Node<N,E> B, E edgeContent)
             {
                 this.A = A;
                 this.B = B;
-            }
-        }
-
-        public class Edge<E> : Edge
-        where E : IEdgeContent
-        {
-            public E edgeContent;
-            public override float length => edgeContent.length;
-            /// <summary> Creates an edge between a and b, with the given length. </summary>
-            public Edge(Node A, Node B, E edgeContent) : base(A, B)
-            {
                 this.edgeContent = edgeContent;
             }
         }
@@ -168,23 +163,18 @@ namespace DesignPatterns
             public Vector3 position { get; }
         }
 
-        public abstract class Node
+        public class Node<N, E>
+        where N : INodeContent
+        where E : IEdgeContent
         {
             public int index;
-            public List<Edge> edges = new List<Edge>();
-            public virtual Vector3 position => Vector3.zero;
-            public Node(int index) => this.index = index;
-        }
-
-        public class Node<N> : Node
-        where N : INodeContent
-        {
-            public override Vector3 position => nodeContent.position;
-
+            public List<Edge<N,E>> edges = new List<Edge<N,E>>();
+            public Vector3 position => nodeContent.position;
             public N nodeContent;
 
-            public Node(int index, N nodeContent) : base(index)
+            public Node(int index, N nodeContent)
             {
+                this.index = index;
                 this.nodeContent = nodeContent;
             }
 

@@ -10,7 +10,9 @@ namespace DesignPatterns
             /// <summary>
             /// Returns an array containing the first move you need to make in order to move from the startNode to all other nodes,
             ///  and the distances to all other nodes.
-            public static (int,float)[] Pathfind<N>(N startNode, List<N> nodes) where N : Node
+            public static (int,float)[] Pathfind<N,E>(Node<N,E> startNode, List<Node<N,E>> nodes)
+            where N : INodeContent
+            where E : IEdgeContent
             {
                 bool[] visited = false.RepeatForArray(nodes.Count);
                 (int,float)[] paths = (-1, Mathf.Infinity).RepeatForArray(nodes.Count);
@@ -18,21 +20,21 @@ namespace DesignPatterns
                 paths[startNode.index] = (startNode.index, 0f);
                 visited[startNode.index] = true;
 
-                Heap<Node> unvisitedNodes = new Heap<Node>(nodes.Count, (n1,n2) => paths[n1.index].Item2 < paths[n2.index].Item2);
-                foreach(Edge edge in startNode.edges)
+                Heap<Node<N,E>> unvisitedNodes = new Heap<Node<N,E>>(nodes.Count, (n1,n2) => paths[n1.index].Item2 < paths[n2.index].Item2);
+                foreach(Edge<N,E> edge in startNode.edges)
                 {
-                    Node adj = edge.Adjacent(startNode);
+                    Node<N,E> adj = edge.Adjacent(startNode);
                     paths[adj.index] = (adj.index, paths[adj.index].Item2 + edge.length);
                     unvisitedNodes.Insert(adj);
                 }
 
                 while(unvisitedNodes.Count > 0)
                 {
-                    Node curr = unvisitedNodes.Extract();
+                    Node<N,E> curr = unvisitedNodes.Extract();
                     visited[curr.index] = true;
-                    foreach(Edge edge in curr.edges)
+                    foreach(Edge<N,E> edge in curr.edges)
                     {
-                        Node adj = edge.Adjacent(curr);
+                        Node<N,E> adj = edge.Adjacent(curr);
                         float newDistance = paths[curr.index].Item2 + edge.length;
                         if(paths[adj.index].Item2 > newDistance)
                         {
