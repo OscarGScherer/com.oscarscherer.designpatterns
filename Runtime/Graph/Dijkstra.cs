@@ -11,8 +11,8 @@ namespace DesignPatterns
             /// Returns an array containing the first move you need to make in order to move from the startNode to all other nodes,
             ///  and the distances to all other nodes.
             public static (int,float)[] Pathfind<N,E>(Node<N,E> startNode, List<Node<N,E>> nodes)
-            where N : INodeContent
-            where E : IEdgeContent
+            where N : INodeContent<N,E>
+            where E : IEdgeContent<N,E>
             {
                 bool[] visited = false.RepeatForArray(nodes.Count);
                 (int,float)[] paths = (-1, Mathf.Infinity).RepeatForArray(nodes.Count);

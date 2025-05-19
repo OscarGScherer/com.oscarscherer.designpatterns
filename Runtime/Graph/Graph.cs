@@ -12,8 +12,8 @@ namespace DesignPatterns
         /// <typeparam name="N">The type of data that is stored in your nodes</typeparam>
         /// <typeparam name="E">The type of data that is stored in your edges</typeparam>
         public class Graph<N, E>
-        where N : INodeContent
-        where E : IEdgeContent
+        where N : INodeContent<N,E>
+        where E : IEdgeContent<N,E>
         {
             public List<Node<N,E>> nodes;
             public List<Edge<N,E>> edges;
@@ -109,8 +109,8 @@ namespace DesignPatterns
         }
 
         public class NodeGroups<N,E>
-        where N : INodeContent
-        where E : IEdgeContent
+        where N : INodeContent<N,E>
+        where E : IEdgeContent<N,E>
         {
             private List<List<Node<N,E>>> nodeGroups = new List<List<Node<N,E>>>();
             public int numGroups => nodeGroups.Count;
@@ -135,15 +135,17 @@ namespace DesignPatterns
             }
         }
 
-        public interface IEdgeContent
+        public interface IEdgeContent<N,E>
+        where E : IEdgeContent<N,E>
+        where N : INodeContent<N, E>
         {
-            public virtual void SetEdge<N, E>(Edge<N, E> edge) where N : INodeContent where E : IEdgeContent { }
+            public abstract void SetEdge(Edge<N, E> edge);
             public float length { get; }
         }
 
         public class Edge<N, E>
-        where E : IEdgeContent
-        where N : INodeContent
+        where E : IEdgeContent<N, E>
+        where N : INodeContent<N, E>
         {
             public Node<N, E> A, B;
             public E content;
@@ -160,18 +162,20 @@ namespace DesignPatterns
             }
         }
 
-        public interface INodeContent
+        public interface INodeContent<N, E>
+        where E : IEdgeContent<N,E>
+        where N : INodeContent<N, E>
         {
-            public virtual void SetNode<N, E>(Node<N, E> edge) where N : INodeContent where E : IEdgeContent { }
+            public abstract void SetNode(Node<N, E> node);
             public Vector3 position { get; }
         }
 
         public class Node<N, E>
-        where N : INodeContent
-        where E : IEdgeContent
+        where N : INodeContent<N,E>
+        where E : IEdgeContent<N,E>
         {
             public int index;
-            public List<Edge<N,E>> edges = new List<Edge<N,E>>();
+            public List<Edge<N, E>> edges = new List<Edge<N, E>>();
             public Vector3 position => content.position;
             public N content;
 
