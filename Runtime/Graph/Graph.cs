@@ -17,8 +17,8 @@ namespace DesignPatterns
         {
             public List<Node<N,E>> nodes;
             public List<Edge<N,E>> edges;
-            private int[,] paths;
-            private float[,] distances;
+            public int[,] paths;
+            public float[,] distances;
 
             public Graph(int numNodes)
             {
@@ -26,9 +26,40 @@ namespace DesignPatterns
                 edges = new List<Edge<N,E>>(numNodes * 2);
             }
 
-            public Node<N,E> AddNode(N nodeContent)
+            public GraphPosition MoveUsingBestPath(GraphPosition graphPos, int nodeGoal, float distance)
             {
-                nodes.Add(new Node<N,E>(nodes.Count, nodeContent));
+                while (distance > 0 && graphPos.nodeI != nodeGoal)
+                {
+                    if (graphPos.edgeI != -1) // If the position is on an edge, move
+                    {
+                        // Update node pos in case the node position is wrong
+                        graphPos.nodeI = graphPos.edgePos > 0.5f ? edges[graphPos.edgeI].B.index : edges[graphPos.edgeI].A.index;
+                        int targetEdge = paths[graphPos.nodeI, nodeGoal];
+                        int direction = -1, targetPos = 0;
+                        if ((graphPos.edgeI == targetEdge && edges[targetEdge].A.index == graphPos.nodeI) ||
+                            (graphPos.edgeI != targetEdge && edges[targetEdge].B.index == graphPos.nodeI))
+                        {
+                            direction = 1;
+                            targetPos = 1;
+                        }
+                        float step = Mathf.Clamp(Mathf.Abs(targetPos - graphPos.edgePos), 0f, distance) * direction;
+                        distance -= Mathf.Abs(step);
+                        graphPos.edgePos += step;
+                        // Update node position based on edgePos
+                        graphPos.nodeI = graphPos.edgePos > 0.5f ? edges[graphPos.edgeI].B.index : edges[graphPos.edgeI].A.index;
+                    }
+                    else // Otherwise, pick an edge to move
+                    {
+                        graphPos.edgeI = paths[graphPos.nodeI, nodeGoal];
+                        graphPos.edgePos = edges[graphPos.edgeI].A.index == graphPos.nodeI ? 0f : 1f;
+                    }
+                }
+                return graphPos;
+            }
+
+            public Node<N, E> AddNode(N nodeContent)
+            {
+                nodes.Add(new Node<N, E>(nodes.Count, nodeContent));
                 return nodes[nodes.Count - 1];
             }
             public void AddEdge(N aContent, N bContent, E edgeContent)
@@ -47,7 +78,7 @@ namespace DesignPatterns
             public void AddEdge(Node<N,E> A, Node<N,E> B, E edgeContent)
             {
                 if (!nodes.Contains(A) || !nodes.Contains(B)) return;
-                edges.Add(new Edge<N,E>(A, B, edgeContent));
+                edges.Add(new Edge<N,E>(edges.Count, A, B, edgeContent));
                 Edge<N,E> edge = edges[edges.Count - 1];
                 edge.A.edges.Add(edge);
                 edge.B.edges.Add(edge);
@@ -59,7 +90,7 @@ namespace DesignPatterns
                 distances = new float[nodes.Count, nodes.Count];
                 for (int i = 0; i < nodes.Count; i++)
                 {
-                    (int, float)[] pathInfo = Dijkstra.Pathfind(nodes[i], nodes);
+                    (int, float)[] pathInfo = Dijkstra.Pathfind(nodes[i], nodes, edges);
                     for (int j = 0; j < nodes.Count; i++)
                     {
                         paths[i, j] = pathInfo[j].Item1;
@@ -108,27 +139,51 @@ namespace DesignPatterns
             // }
         }
 
-        public class NodeGroups<N,E>
-        where N : INodeContent<N,E>
-        where E : IEdgeContent<N,E>
+        public class GraphPosition
         {
-            private List<List<Node<N,E>>> nodeGroups = new List<List<Node<N,E>>>();
+            public int nodeI, edgeI;
+            public float edgePos;
+            public GraphPosition(int nodeI, int edgeI, float edgePos)
+            {
+                this.nodeI = nodeI;
+                this.edgeI = edgeI;
+                this.edgePos = edgePos;
+            }
+            public GraphPosition(int nodeI)
+            {
+                this.nodeI = nodeI;
+                edgeI = -1;
+                edgePos = -1;
+            }
+            public GraphPosition(int edgeI, float edgePos)
+            {
+                nodeI = -1;
+                this.edgeI = edgeI;
+                this.edgePos = edgePos;
+            }
+        }
+
+        public class NodeGroups<N, E>
+        where N : INodeContent<N, E>
+        where E : IEdgeContent<N, E>
+        {
+            private List<List<Node<N, E>>> nodeGroups = new List<List<Node<N, E>>>();
             public int numGroups => nodeGroups.Count;
 
-            public NodeGroups(List<Node<N,E>> nodes)
+            public NodeGroups(List<Node<N, E>> nodes)
             {
-                nodes.ForEach((n) => nodeGroups.Add(new List<Node<N,E>>() { n }));
+                nodes.ForEach((n) => nodeGroups.Add(new List<Node<N, E>>() { n }));
             }
 
             /// <summary> Merge's the edge's a node group with the edge's b node group </summary>
-            public void AddEdge(Edge<N,E> edge)
+            public void AddEdge(Edge<N, E> edge)
             {
-                List<Node<N,E>> groupWithA = nodeGroups.FirstOrDefault((g) => g.Contains(edge.A)) ?? new List<Node<N,E>>() { edge.A };
+                List<Node<N, E>> groupWithA = nodeGroups.FirstOrDefault((g) => g.Contains(edge.A)) ?? new List<Node<N, E>>() { edge.A };
                 nodeGroups.Remove(groupWithA);
-                List<Node<N,E>> groupWithB = nodeGroups.FirstOrDefault((g) => g.Contains(edge.B));
+                List<Node<N, E>> groupWithB = nodeGroups.FirstOrDefault((g) => g.Contains(edge.B));
                 if (groupWithB == null)
                 {
-                    groupWithB = new List<Node<N,E>>() { edge.B };
+                    groupWithB = new List<Node<N, E>>() { edge.B };
                     nodeGroups.Add(groupWithB);
                 }
                 groupWithB.AddRange(groupWithA);
@@ -147,14 +202,16 @@ namespace DesignPatterns
         where E : IEdgeContent<N, E>
         where N : INodeContent<N, E>
         {
+            public int index;
             public Node<N, E> A, B;
             public E content;
             public float length => content.length;
 
             public Node<N, E> Adjacent(Node<N, E> n) => n == A ? B : A;
 
-            public Edge(Node<N, E> A, Node<N, E> B, E content)
+            public Edge(int index, Node<N, E> A, Node<N, E> B, E content)
             {
+                this.index = index;
                 this.A = A;
                 this.B = B;
                 this.content = content;

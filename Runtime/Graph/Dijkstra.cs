@@ -10,7 +10,7 @@ namespace DesignPatterns
             /// <summary>
             /// Returns an array containing the first move you need to make in order to move from the startNode to all other nodes,
             ///  and the distances to all other nodes.
-            public static (int,float)[] Pathfind<N,E>(Node<N,E> startNode, List<Node<N,E>> nodes)
+            public static (int,float)[] Pathfind<N,E>(Node<N,E> startNode, List<Node<N,E>> nodes, List<Edge<N,E>> edges)
             where N : INodeContent<N,E>
             where E : IEdgeContent<N,E>
             {
@@ -24,7 +24,7 @@ namespace DesignPatterns
                 foreach(Edge<N,E> edge in startNode.edges)
                 {
                     Node<N,E> adj = edge.Adjacent(startNode);
-                    paths[adj.index] = (adj.index, paths[adj.index].Item2 + edge.length);
+                    paths[adj.index] = (edge.index, paths[adj.index].Item2 + edge.length);
                     unvisitedNodes.Insert(adj);
                 }
 
