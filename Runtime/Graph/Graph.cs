@@ -228,8 +228,8 @@ namespace DesignPatterns
         }
 
         public class Node<N, E>
-        where N : INodeContent<N,E>
-        where E : IEdgeContent<N,E>
+        where N : INodeContent<N, E>
+        where E : IEdgeContent<N, E>
         {
             public int index;
             public List<Edge<N, E>> edges = new List<Edge<N, E>>();
@@ -244,6 +244,13 @@ namespace DesignPatterns
             }
 
             public int GetNumAdjacentNodes() => edges.Count;
+
+            public List<N> GetAdjacentContent()
+            {
+                List<N> adjacent = new List<N>(edges.Count);
+                foreach (Edge<N, E> edge in edges) adjacent.Add(edge.Adjacent(this).content);
+                return adjacent;
+            }
         }
     }
 }
