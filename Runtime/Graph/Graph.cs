@@ -84,7 +84,7 @@ namespace DesignPatterns
                 edge.B.edges.Add(edge);
             }
 
-            private void UpdatePaths()
+            public void UpdatePathsAndDistances()
             {
                 paths = new int[nodes.Count, nodes.Count];
                 distances = new float[nodes.Count, nodes.Count];
