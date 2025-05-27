@@ -91,7 +91,7 @@ namespace DesignPatterns
                 for (int i = 0; i < nodes.Count; i++)
                 {
                     (int, float)[] pathInfo = Dijkstra.Pathfind(nodes[i], nodes, edges);
-                    for (int j = 0; j < nodes.Count; i++)
+                    for (int j = 0; j < nodes.Count; j++)
                     {
                         paths[i, j] = pathInfo[j].Item1;
                         distances[i, j] = pathInfo[j].Item2;
