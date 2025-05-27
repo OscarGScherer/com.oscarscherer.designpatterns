@@ -24,7 +24,7 @@ namespace DesignPatterns
                 foreach (Edge<N, E> edge in startNode.edges)
                 {
                     Node<N, E> adj = edge.Adjacent(startNode);
-                    paths[adj.index] = (edge.index, paths[adj.index].Item2 + edge.length);
+                    paths[adj.index] = (edge.index, edge.length);
                     unvisitedNodes.Insert(adj);
                 }
 
