@@ -56,23 +56,16 @@ namespace DesignPatterns
             items.RemoveAt(items.Count-1);
             int curr = 0;
             int child;
-            while(true)
+            while (true)
             {
+                int swapIndex = curr;
                 child = LeftChildOf(curr); // Left child
-                if(child >= 0 && orderingFunction(items[child], items[curr]))
-                {
-                    Swap(curr, child);
-                    curr = child;
-                    continue;
-                }
+                if (child < items.Count && orderingFunction(items[child], items[curr])) swapIndex = child;
                 child += 1; // Right child
-                if(child >= 0 && child < items.Count && orderingFunction(items[child], items[curr]))
-                {
-                    Swap(curr, child);
-                    curr = child;
-                    continue;
-                }
-                break;
+                if (child < items.Count && orderingFunction(items[child], items[swapIndex])) swapIndex = child;
+                if (swapIndex == curr) break;
+                Swap(curr, swapIndex);
+                curr = swapIndex;
             }
             return toRemove;
         }
@@ -88,14 +81,12 @@ namespace DesignPatterns
         /// <summary> Returns the left child of the given index. If the child is out of bounds of the heap, returns int.MinValue. </summary>
         private int LeftChildOf(int index)
         {
-            int childIndex = 2*index + 1;
-            return childIndex > items.Count-1 ? int.MinValue : childIndex;
+            return 2*index + 1;
         }
         /// <summary> Returns the right child of the given index. If the child is out of bounds of the heap, returns int.MinValue. </summary>
         private int RightChildOf(int index)
         {
-            int childIndex = 2*index + 2;
-            return childIndex > items.Count-1 ? int.MinValue : childIndex;
+            return 2*index + 2;
         }
     }
 }
