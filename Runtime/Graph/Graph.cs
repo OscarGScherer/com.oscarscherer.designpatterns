@@ -26,33 +26,47 @@ namespace DesignPatterns
                 edges = new List<Edge<N,E>>(numNodes * 2);
             }
 
-            public GraphPosition MoveUsingBestPath(GraphPosition graphPos, int nodeGoal, float distance)
+            public GraphPosition MoveUsingBestPath(GraphPosition start, GraphPosition goal, float distance)
             {
-                while (distance > 0 && graphPos.nodeI != nodeGoal)
+                GraphPosition graphPos = new GraphPosition(start.nodeI, start.edgeI, start.edgePos);
+                while (distance > 0 && !graphPos.SamePositionAs(goal))
                 {
-                    if (graphPos.edgeI != -1) // If the position is on an edge, move
+                    float step = 0;
+                    // If you are in the same edge as the goal, just move to the goal's edgePos
+                    if (graphPos.edgeI == goal.edgeI)
                     {
-                        // Update node pos in case the node position is wrong
-                        graphPos.nodeI = graphPos.edgePos > 0.5f ? edges[graphPos.edgeI].B.index : edges[graphPos.edgeI].A.index;
-                        int targetEdge = paths[graphPos.nodeI, nodeGoal];
-                        int direction = -1, targetPos = 0;
-                        if ((graphPos.edgeI == targetEdge && edges[targetEdge].A.index == graphPos.nodeI) ||
-                            (graphPos.edgeI != targetEdge && edges[targetEdge].B.index == graphPos.nodeI))
-                        {
-                            direction = 1;
-                            targetPos = 1;
-                        }
-                        float step = Mathf.Clamp(Mathf.Abs(targetPos - graphPos.edgePos), 0f, distance) * direction;
-                        distance -= Mathf.Abs(step);
-                        graphPos.edgePos += step;
-                        // Update node position based on edgePos
-                        graphPos.nodeI = graphPos.edgePos > 0.5f ? edges[graphPos.edgeI].B.index : edges[graphPos.edgeI].A.index;
+                        float diff = graphPos.edgePos - goal.edgePos;
+                        step = Mathf.Clamp(Mathf.Abs(diff), 0, distance) * Mathf.Sign(diff);
                     }
-                    else // Otherwise, pick an edge to move
+                    // If the you are in the same node as the goal, move to the goal's edge
+                    else if (graphPos.nodeI == goal.nodeI)
                     {
-                        graphPos.edgeI = paths[graphPos.nodeI, nodeGoal];
+                        graphPos.edgeI = goal.edgeI;
                         graphPos.edgePos = edges[graphPos.edgeI].A.index == graphPos.nodeI ? 0f : 1f;
+                        continue;
                     }
+                    // If you are in the edge in the correct path to the goal, move along it
+                    else if (graphPos.edgeI == paths[graphPos.nodeI, goal.nodeI])
+                    {
+                        float diff = (edges[graphPos.edgeI].A.index == graphPos.nodeI ? 1f : 0f) - graphPos.edgePos;
+                        step = Mathf.Clamp(Mathf.Abs(diff), 0, distance) * Mathf.Sign(diff);
+                    }
+                    // If you are in the wrong edge, move back towards your node
+                    else if (graphPos.edgePos > 0f && graphPos.edgePos < 1f)
+                    {
+                        float diff = (edges[graphPos.edgeI].A.index == graphPos.nodeI ? 0f : 1f) - graphPos.edgePos;
+                        step = Mathf.Clamp(Mathf.Abs(diff), 0, distance) * Mathf.Sign(diff);
+                    }
+                    else // Else if you are in a node and not any edge, move to the best path edge
+                    {
+                        int targetEdge = paths[graphPos.nodeI, goal.nodeI];
+                        graphPos.edgeI = targetEdge;
+                        graphPos.edgePos = edges[graphPos.edgeI].A.index == graphPos.nodeI ? 0f : 1f;
+                        continue;
+                    }
+                    graphPos.edgePos += step;
+                    graphPos.nodeI = graphPos.edgePos > 0.5f ? edges[graphPos.edgeI].B.index : edges[graphPos.edgeI].A.index;
+                    distance -= Mathf.Abs(step);
                 }
                 return graphPos;
             }
@@ -143,6 +157,15 @@ namespace DesignPatterns
         {
             public int nodeI, edgeI;
             public float edgePos;
+
+            public bool SamePositionAs(GraphPosition other)
+            {
+                return
+                    nodeI == other.nodeI &&                                                         // They must be on the same node AND
+                    ((edgeI == other.edgeI && edgePos == other.edgePos) ||                          // They are on the same edge and edgePos OR
+                    (edgePos == 0 || edgePos == 1) && (other.edgePos == 0 || other.edgePos == 1));  // They both are on their edge's ends (0 or 1)
+            }
+
             public GraphPosition(int nodeI, int edgeI, float edgePos)
             {
                 this.nodeI = nodeI;
