@@ -32,8 +32,8 @@ namespace DesignPatterns
                 while (distance > 0 && !graphPos.SamePositionAs(goal))
                 {
                     float step = 0;
-                    // If you are in the same edge as the goal, just move to the goal's edgePos
-                    if (graphPos.edgeI == goal.edgeI)
+                    // If the goal is on an edge and you are in the same edge as the goal, just move to the goal's edgePos
+                    if (goal.edgePos > 0f && goal.edgePos < 1f && graphPos.edgeI == goal.edgeI)
                     {
                         float diff = graphPos.edgePos - goal.edgePos;
                         step = Mathf.Clamp(Mathf.Abs(diff), 0, distance) * Mathf.Sign(diff);
