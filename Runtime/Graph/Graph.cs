@@ -29,6 +29,7 @@ namespace DesignPatterns
             public GraphPosition MoveUsingBestPath(GraphPosition start, GraphPosition goal, float distance)
             {
                 GraphPosition graphPos = new GraphPosition(start.nodeI, start.edgeI, start.edgePos);
+                int i = 0;
                 while (distance > 0 && !graphPos.SamePositionAs(goal))
                 {
                     float step = 0;
@@ -63,12 +64,16 @@ namespace DesignPatterns
                     }
 
                     // Factoring in the length of the edge
-                    float stepLength = Mathf.Clamp(Mathf.Abs(step * edges[graphPos.edgeI].length), 0, distance) / edges[graphPos.edgeI].length;
-                    step = Mathf.Clamp(Mathf.Abs(step), 0, stepLength) * Mathf.Sign(step);
+                    float stepPercent = distance / Mathf.Abs(step * edges[graphPos.edgeI].length);
+                    step = Mathf.Clamp(Mathf.Abs(step), 0, stepPercent) * Mathf.Sign(step);
 
                     graphPos.edgePos += step;
                     graphPos.nodeI = graphPos.edgePos > 0.5f ? edges[graphPos.edgeI].B.index : edges[graphPos.edgeI].A.index;
                     distance -= Mathf.Abs(step) * edges[graphPos.edgeI].length;
+
+                    i++;
+                    Debug.Log($"Step percent: {stepPercent}, step: {step}, distance: {distance}");
+                    if (i > 1000) break;
                 }
                 return graphPos;
             }
