@@ -38,8 +38,8 @@ namespace DesignPatterns
                         float diff = graphPos.edgePos - goal.edgePos;
                         step = Mathf.Clamp(Mathf.Abs(diff), 0, distance) * Mathf.Sign(diff);
                     }
-                    // If the you are in the same node as the goal, move to the goal's edge
-                    else if (graphPos.nodeI == goal.nodeI)
+                    // If the goal is on an edge and you are in the same node as the goal, move to the goal's edge
+                    else if (goal.edgePos > 0f && goal.edgePos < 1f && graphPos.nodeI == goal.nodeI)
                     {
                         graphPos.edgeI = goal.edgeI;
                         graphPos.edgePos = edges[graphPos.edgeI].A.index == graphPos.nodeI ? 0f : 1f;
