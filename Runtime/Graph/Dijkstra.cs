@@ -17,7 +17,7 @@ namespace DesignPatterns
                 bool[] visited = false.RepeatForArray(nodes.Count);
                 (int, float)[] paths = (-1, Mathf.Infinity).RepeatForArray(nodes.Count);
 
-                paths[startNode.index] = (startNode.index, 0f);
+                paths[startNode.index] = (-1, 0f);
                 visited[startNode.index] = true;
 
                 Heap<Node<N, E>> unvisitedNodes = new Heap<Node<N, E>>(nodes.Count, (n1, n2) => paths[n1.index].Item2 < paths[n2.index].Item2);
