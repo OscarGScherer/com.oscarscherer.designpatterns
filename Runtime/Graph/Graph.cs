@@ -168,7 +168,7 @@ namespace DesignPatterns
                 return
                     nodeI == other.nodeI &&                                                         // They must be on the same node AND
                     ((edgeI == other.edgeI && edgePos == other.edgePos) ||                          // They are on the same edge and edgePos OR
-                    (edgePos == 0 || edgePos == 1) && (other.edgePos == 0 || other.edgePos == 1));  // They both are on their edge's ends (0 or 1)
+                    (edgePos <= 0 || edgePos >= 1) && (other.edgePos <= 0 || other.edgePos >= 1));  // They both are on their edge's ends (0 or 1)
             }
 
             public GraphPosition(int nodeI, int edgeI, float edgePos)
