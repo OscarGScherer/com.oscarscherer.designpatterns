@@ -158,6 +158,11 @@ namespace DesignPatterns
             public int nodeI, edgeI;
             public float edgePos;
 
+            public override string ToString()
+            {
+                return $"NodeI:{nodeI},EdgeI:{edgeI},EdgePos:{edgePos}";
+            }
+
             public bool SamePositionAs(GraphPosition other)
             {
                 return
