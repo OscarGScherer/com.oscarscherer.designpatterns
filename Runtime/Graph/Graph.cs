@@ -34,12 +34,12 @@ namespace DesignPatterns
                 {
                     float step = 0;
                     // If the goal is on an edge and you are in the same edge as the goal, just move to the goal's edgePos
-                    if (goal.edgePos > 0f && goal.edgePos < 1f && graphPos.edgeI == goal.edgeI)
+                    if (goal.IsOnEdge() && graphPos.edgeI == goal.edgeI)
                     {
                         step = graphPos.edgePos - goal.edgePos;
                     }
                     // If the goal is on an edge and you are in the same node as the goal, move to the goal's edge
-                    else if (goal.edgePos > 0f && goal.edgePos < 1f && graphPos.nodeI == goal.nodeI)
+                    else if (goal.IsOnEdge() && graphPos.nodeI == goal.nodeI)
                     {
                         graphPos.edgeI = goal.edgeI;
                         graphPos.edgePos = edges[graphPos.edgeI].A.index == graphPos.nodeI ? 0f : 1f;
@@ -51,7 +51,7 @@ namespace DesignPatterns
                         step = (edges[graphPos.edgeI].A.index == graphPos.nodeI ? 1f : 0f) - graphPos.edgePos;
                     }
                     // If you are in the wrong edge, move back towards your node
-                    else if (graphPos.edgePos > 0f && graphPos.edgePos < 1f)
+                    else if (graphPos.IsOnEdge())
                     {
                         step = (edges[graphPos.edgeI].A.index == graphPos.nodeI ? 0f : 1f) - graphPos.edgePos;
                     }
@@ -163,6 +163,8 @@ namespace DesignPatterns
         {
             public int nodeI, edgeI;
             public float edgePos;
+
+            public bool IsOnEdge() => edgePos > 0f && edgePos < 1f;
 
             public override string ToString()
             {
