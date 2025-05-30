@@ -21,5 +21,11 @@ namespace DesignPatterns
             foreach (T t in enumerable) list.Add(t);
             return list;
         }
+        /// <summary> Returns true if the list contains every element in the given enumerable. </summary>
+        public static bool ContainsAll<T>(this List<T> list, IEnumerable<T> enumerable)
+        {
+            foreach (T t in enumerable) if (!list.Contains(t)) return false;
+            return true;
+        }
     }
 }
