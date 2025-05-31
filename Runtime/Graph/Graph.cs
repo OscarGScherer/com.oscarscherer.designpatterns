@@ -164,7 +164,7 @@ namespace DesignPatterns
             public int nodeI, edgeI;
             public float edgePos;
 
-            public bool IsOnEdge() => edgePos > 0f && edgePos < 1f;
+            public bool IsOnEdge() => edgeI >= 0;
 
             public override string ToString()
             {
