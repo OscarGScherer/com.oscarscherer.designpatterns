@@ -173,10 +173,14 @@ namespace DesignPatterns
 
             public bool SamePositionAs(GraphPosition other)
             {
-                return
-                    nodeI == other.nodeI &&                                                         // They must be on the same node AND
-                    ((edgeI == other.edgeI && edgePos == other.edgePos) ||                          // They are on the same edge and edgePos OR
-                    (edgePos <= 0 || edgePos >= 1) && (other.edgePos <= 0 || other.edgePos >= 1));  // They both are on their edge's ends (0 or 1)
+                if (IsOnEdge()) // If this position is on an edge, check if the other is on the same edge and position
+                {
+                    return edgeI == other.edgeI && edgePos == other.edgePos;
+                }
+                else // Else check if the other position is not on an edge and is on the same node
+                {
+                    return !other.IsOnEdge() && nodeI == other.nodeI;
+                }
             }
 
             public GraphPosition(int nodeI, int edgeI, float edgePos)
