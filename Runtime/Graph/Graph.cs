@@ -161,7 +161,7 @@ namespace DesignPatterns
         }
 
         [Serializable]
-        public class GraphPosition
+        public struct GraphPosition
         {
             public int nodeI, edgeI;
             public float edgePos;
