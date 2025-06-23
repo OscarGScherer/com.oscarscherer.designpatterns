@@ -150,9 +150,11 @@ To use it, you just need to call ```EventBus<T>.RaiseEvent```, ```EventBus<T>.Re
 ```c#
 public class ClassA : MonoBehaviour
 {
+    public enum EventNames { EventA, EventB, }
+
     void Start()
     {
-        EventBus<string>.RegisterToEvent("Example event", ExampleFunction);
+        EventBus<string>.RegisterToEvent(EventNames.EventA, ExampleFunction);
     }
 
     void ExampleFunction(string message) => Debug.Log(message);
@@ -162,7 +164,7 @@ public class ClassB : MonoBehaviour
 {
     void SomePreccess()
     {
-        EventBus<string>.RaiseEvent("Example event", "Raised event!");
+        EventBus<string>.RaiseEvent(EventNames.EventA, "Raised event!");
     }
 }
 ```
