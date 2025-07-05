@@ -8,7 +8,7 @@ Generic implementations of commonly used design patterns.
 * [Event Bus](#event-bus)
 
 **Other**
-* [How to install](#how-to-install)
+* [How to install this package](#how-to-install-this-package)
 
 # Singleton
 To create a singleton, simply inherit from ```Singleton```. Note that if you want to use OnEnable and OnDisable, you must override the existing methods and call the base implementation for both, since those are used to keep track of each Singleton type.
@@ -169,7 +169,7 @@ public class ClassB : MonoBehaviour
 }
 ```
 
-## How to install
+## How to install this package
 1. Open package manager
 2. Click on '+', on the top left corner
 3. Select Install package from git URL
