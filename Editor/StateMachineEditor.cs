@@ -23,7 +23,7 @@ namespace DesignPatterns.StateMachine
 
             StateMachine sm = (StateMachine) target;
 
-            if(sm.currentState == null)
+            if(sm.currentStateObject == null)
             {
                 GUILayout.Label("Current state is null");
                 return;
@@ -34,13 +34,13 @@ namespace DesignPatterns.StateMachine
             GUIStyle textArea = new GUIStyle(GUI.skin.textArea){ wordWrap = true, alignment = TextAnchor.UpperLeft, padding = new RectOffset(20,0,5,10) };
             textArea.normal = new GUIStyleState(){ textColor = Color.white };
 
-            Type stateType = sm.currentState.GetType();
+            Type stateType = sm.currentStateObject.GetType();
             EditorGUILayout.LabelField("Current state: " + stateType.Name, stateNameStyle);
 
-            showSelectedNodeFields = CustomEditorUtilities.DisplayTargetFieldsWithReflection(sm.currentState, showSelectedNodeFields);
-            showSelectedNodeProperties = CustomEditorUtilities.DisplayTargetPropertiesWithReflection(sm.currentState, showSelectedNodeProperties);
+            showSelectedNodeFields = CustomEditorUtilities.DisplayTargetFieldsWithReflection(sm.currentStateObject, showSelectedNodeFields);
+            // showSelectedNodeProperties = CustomEditorUtilities.DisplayTargetPropertiesWithReflection(sm.currentStateObject, showSelectedNodeProperties);
 
-            EditorGUILayout.LabelField(sm.currentState.ToDebugString(), textArea);
+            EditorGUILayout.LabelField(sm.currentStateObject.ToDebugString(), textArea);
         }
     }
 }
