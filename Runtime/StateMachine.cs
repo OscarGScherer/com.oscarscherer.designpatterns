@@ -118,7 +118,7 @@ namespace DesignPatterns.StateMachine
                 if (state != currentState) state.InactiveUpdate();
             }
             if (currentState == null) return;
-            Type stateType = currentState.ActiveUpdate(context).type;
+            Type stateType = currentState.ActiveUpdate(context)?.type;
             SetState(stateType);
         }
 
