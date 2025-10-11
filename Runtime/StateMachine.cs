@@ -85,11 +85,12 @@ namespace DesignPatterns.StateMachine
         protected TS currentState;
         protected List<TS> states = new();
 
-        private void CreateState(Type stateType)
+        private TS CreateState(Type stateType)
         {
             TS newState = (TS)Activator.CreateInstance(stateType);
             newState.Initialize((TSM)this);
             states.Add(newState);
+            return newState;
         }
         /// <returns>
         /// The state of this SM of the given type.
@@ -97,7 +98,7 @@ namespace DesignPatterns.StateMachine
         protected TS GetStateOf(Type stateType)
         {
             TS state = states.FirstOrDefault(state => stateType.IsInstanceOfType(state));
-            if (state == null) CreateState(stateType);
+            if (state == null) state = CreateState(stateType);
             return state;
         }
         /// <returns>
@@ -153,7 +154,7 @@ namespace DesignPatterns.StateMachine
         /// </param>
         private void SetState(Type stateType)
         {
-            if (stateType != null) return;
+            if (stateType == null) return;
             if (currentState != null)
             {
                 if (stateType == currentState.GetType()) return;
