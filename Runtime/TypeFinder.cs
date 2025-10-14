@@ -29,13 +29,14 @@ namespace DesignPatterns
 
         public static Type GetTypeFromTypeFullName(string fullTypeName)
         {
+            if (fullTypeName == null) return null;
             // Look through all loaded assemblies
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 var type = assembly.GetType(fullTypeName);
                 if (type != null) return type;
             }
-            throw new ArgumentException($"Enum type '{fullTypeName}' not found in loaded assemblies.");
+            return null;
         }
     }
 }

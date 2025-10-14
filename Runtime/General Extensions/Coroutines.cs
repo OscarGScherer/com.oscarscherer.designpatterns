@@ -24,7 +24,7 @@ namespace DesignPatterns
             duration = duration < 0 ? 0 : duration;
             update ??= _ => { };
             step ??= () => null;
-            Func<float> deltaTime = DeltaTimes[(int)TimeMode.Scaled];
+            Func<float> deltaTime = DeltaTimes[(int)timeMode];
             while (timer < duration)
             {
                 update(timer / duration);
