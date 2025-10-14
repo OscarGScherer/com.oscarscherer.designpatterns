@@ -31,11 +31,11 @@ namespace DesignPatterns.StateMachine
         /// <summary>
         /// Called when the SM enters this state.
         /// </summary>
-        public abstract void OnEnter(TSM stateMachine);
+        public abstract void OnEnter(TSI input);
         /// <summary>
         /// Called whenever the SM exits this state
         /// </summary>
-        public abstract void OnExit(TSM stateMachine);
+        public abstract void OnExit(TSI input);
         /// <summary>
         /// Implement this to get all necessary references for your state to run.
         /// This function will be called when a state is added to a state machine.
@@ -49,7 +49,7 @@ namespace DesignPatterns.StateMachine
         /// <returns>
         /// The type of state the SM should transition to.
         /// </returns>
-        public abstract Transition<TS> ActiveUpdate(TSI context);
+        public abstract Transition<TS> ActiveUpdate(TSI input);
         public override void GeneralUpdate() { /*NOOP*/ }
         public override void InactiveUpdate() { /*NOOP*/ }
     }
@@ -110,7 +110,7 @@ namespace DesignPatterns.StateMachine
         /// <summary>
         /// Updates the current state and handle transitions that might happen.
         /// </summary>
-        public virtual void UpdateStateMachine(TSI context)
+        public virtual void UpdateStateMachine(TSI input)
         {
             foreach(State state in states)
             {
@@ -119,14 +119,14 @@ namespace DesignPatterns.StateMachine
                 if (state != currentState) state.InactiveUpdate();
             }
             if (currentState == null) return;
-            Type stateType = currentState.ActiveUpdate(context)?.type;
-            SetState(stateType);
+            Type stateType = currentState.ActiveUpdate(input)?.type;
+            SetState(stateType, input);
         }
 
         /// <summary>
         /// Transitions to the SM's state of the same type of the given state type.
         /// </summary>
-        public void SetState<DTS>() where DTS : TS => SetState(typeof(DTS));
+        public void SetState<DTS>(TSI input) where DTS : TS => SetState(typeof(DTS), input);
         public void AddState<DTS>(DTS state) where DTS : TS
         {
             TS existingState = states.FirstOrDefault(state => typeof(DTS).IsInstanceOfType(state));
@@ -152,16 +152,16 @@ namespace DesignPatterns.StateMachine
         /// <param name="state">
         /// The state of the type you want to transition to
         /// </param>
-        private void SetState(Type stateType)
+        private void SetState(Type stateType, TSI input)
         {
             if (stateType == null) return;
             if (currentState != null)
             {
                 if (stateType == currentState.GetType()) return;
-                currentState.OnExit((TSM)this);
+                currentState.OnExit(input);
             }
             currentState = GetStateOf(stateType);
-            currentState.OnEnter((TSM)this);
+            currentState.OnEnter(input);
             LogStateChange(currentState);
         }
     }
