@@ -7,21 +7,30 @@ namespace DesignPatterns
 {
     public static class TypeFinder
     {
-        public static List<Type> GetAllDerivedTypes<T>(bool includeAbstractTypes = false) => GetAllDerivedTypes(typeof(T), includeAbstractTypes);
+        private static Dictionary<Type, List<Type>> typeToDerivativesCache = new();
 
-        public static List<Type> GetAllDerivedTypes(Type baseType, bool includeAbstractTypes = false)
+        public static List<Type> GetAllDerivedTypes<T>(Func<Type,bool> filter = null) => GetAllDerivedTypes(typeof(T), filter);
+
+        public static List<Type> GetAllDerivedTypes(Type baseType, Func<Type,bool> filter = null)
         {
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => {
-                    try {
+            filter ??= _ => true;
+            if (typeToDerivativesCache.TryGetValue(baseType, out List<Type> derivedTypes)) return derivedTypes.Where(t => filter(t)).ToList();
+            derivedTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly =>
+                {
+                    try
+                    {
                         return assembly.GetTypes();
                     }
-                    catch (ReflectionTypeLoadException e) {
+                    catch (ReflectionTypeLoadException e)
+                    {
                         return e.Types.Where(t => t != null);
                     }
                 })
-                .Where(type => baseType.IsAssignableFrom(type) && type != baseType && (!type.IsAbstract || includeAbstractTypes))
+                .Where(t => t != baseType && baseType.IsAssignableFrom(t))
                 .ToList();
+            typeToDerivativesCache.Add(baseType, derivedTypes);
+            return derivedTypes.Where(t => filter(t)).ToList();
         }
 
         public static Type GetTypeFromTypeFullName(string fullTypeName)
