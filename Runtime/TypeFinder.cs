@@ -7,19 +7,16 @@ namespace DesignPatterns
 {
     public static class TypeFinder
     {
-        public static List<Type> GetAllDerivedTypes<T>() => GetAllDerivedTypes(typeof(T));
+        public static List<Type> GetAllDerivedTypes<T>(bool includeAbstractTypes = false) => GetAllDerivedTypes(typeof(T), includeAbstractTypes);
 
         public static List<Type> GetAllDerivedTypes(Type baseType, bool includeAbstractTypes = false)
         {
             return AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly =>
-                {
-                    try
-                    {
+                .SelectMany(assembly => {
+                    try {
                         return assembly.GetTypes();
                     }
-                    catch (ReflectionTypeLoadException e)
-                    {
+                    catch (ReflectionTypeLoadException e) {
                         return e.Types.Where(t => t != null);
                     }
                 })
