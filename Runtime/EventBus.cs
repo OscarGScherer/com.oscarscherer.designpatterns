@@ -18,31 +18,27 @@ namespace DesignPatterns
         {
             public readonly string name;
             public UnityEvent<T> unityEvent = new();
-            public List<T> eventHistory = new List<T>();
             public BusEvent(string name) => this.name = name;
         }
 
-        private static Dictionary<string, BusEvent> namedEvents = new();
+        private static Dictionary<(Type,Enum), BusEvent> namedEvents = new();
 
         /// <summary>
         /// Register to some event tied to eventEnum value and the type T.
         /// </summary>
         /// <param name="eventEnum"> Enum value of the event. </param>
         /// <param name="action"> The action to add as listener. </param>
-        /// <param name="getUpToDateWithEventHistory">
-        /// Whether to immediatly call the action will all the parameters already raised prior to this action being registered.
-        /// </param>
-        public static void RegisterToEvent<E>(E eventEnum, UnityAction<T> action, bool getUpToDateWithEventHistory = false)
+        public static void RegisterToEvent<E>(E eventEnum, UnityAction<T> action)
         where E : Enum
         {
-            string eventName = GetEventName(eventEnum);
-            if (!namedEvents.ContainsKey(eventName)) namedEvents.Add(eventName, new BusEvent(eventName));
-            if (getUpToDateWithEventHistory)
+            (Type, Enum) key = (typeof(T), eventEnum);
+            BusEvent busEvent;
+            if (!namedEvents.TryGetValue(key, out busEvent))
             {
-                foreach (T t in namedEvents[eventName].eventHistory)
-                    action.Invoke(t);
+                busEvent = new BusEvent($"{typeof(T).Name}|{eventEnum}");
+                namedEvents.Add(key, busEvent);
             }
-            namedEvents[eventName].unityEvent.AddListener(action);
+            busEvent.unityEvent.AddListener(action);
         }
 
         /// <summary>
@@ -53,10 +49,12 @@ namespace DesignPatterns
         public static void UnregisterFromEvent<E>(E eventEnum, UnityAction<T> action)
         where E : Enum
         {
-            string eventName = GetEventName(eventEnum);
-            if (!namedEvents.ContainsKey(eventName)) return;
-            namedEvents[eventName].unityEvent.RemoveListener(action);
+            (Type, Enum) key = (typeof(T), eventEnum);
+            BusEvent busEvent;
+            if (!namedEvents.TryGetValue(key, out busEvent)) return;
+            busEvent.unityEvent.RemoveListener(action);
         }
+
         /// <summary>
         /// Raise the event tied to the eventEnum value and type T, passing along the given param.
         /// </summary>
@@ -64,20 +62,17 @@ namespace DesignPatterns
         /// <param name="param">
         /// The parameter that will be passed to all listeners.
         /// </param>
-        /// <param name="addToEventHistory">
-        /// Whether to add the given param to the event raise history.
-        /// </param>
-        public static void RaiseEvent<E>(E eventEnum, T param, bool addToEventHistory = false)
+        public static void RaiseEvent<E>(E eventEnum, T param)
         where E : Enum
         {
-            string eventName = GetEventName(eventEnum);
-            if (!namedEvents.ContainsKey(eventName)) namedEvents.Add(eventName, new BusEvent(eventName));
-            if (addToEventHistory) namedEvents[eventName].eventHistory.Add(param);
-            namedEvents[eventName].unityEvent.Invoke(param);
+            (Type, Enum) key = (typeof(T), eventEnum);
+            BusEvent busEvent;
+            if (!namedEvents.TryGetValue(key, out busEvent))
+            {
+                busEvent = new BusEvent($"{typeof(T).Name}|{eventEnum}");
+                namedEvents.Add(key, busEvent);
+            }
+            busEvent.unityEvent.Invoke(param);
         }
-        /// <summary>
-        /// Helper functions that converts the enum and argument type into a string to lookup the event dictionary.
-        /// </summary>
-        private static string GetEventName<E>(E eventEnum) where E : Enum => $"{typeof(T)}|{typeof(E)}|{eventEnum}";
     }
 }
