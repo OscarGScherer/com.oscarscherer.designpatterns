@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace DesignPatterns
@@ -49,23 +50,73 @@ namespace DesignPatterns
         // SWIZZLING
         // ==================================================================
         // V2
-        public static Vector2 Swizzle(this Vector4 self, int x, int y) => new Vector4(self[x], self[y]);
-        public static Vector2 Swizzle(this Vector3 self, int x, int y) => new Vector2(self[x], self[y]);
-        public static Vector2 Swizzle(this Vector2 self, int x, int y) => new Vector2(self[x], self[y]);
+        public static Vector2 ToV2(this Vector4 v4, string xy) => new Vector2(v4.Get(xy[0]), v4.Get(xy[1]));
+        public static Vector2 ToV2(this Vector3 v3, string xy) => new Vector2(v3.Get(xy[0]), v3.Get(xy[1]));
+        public static Vector2 ToV2(this Vector2 vw, string xy) => new Vector2(vw.Get(xy[0]), vw.Get(xy[1]));
         // V3
-        public static Vector3 Swizzle(this Vector4 self, int x, int y, int z) => new Vector3(self[x], self[y], self[z]);
-        public static Vector3 Swizzle(this Vector3 self, int x, int y, int z) => new Vector3(self[x], self[y], self[z]);
-        public static Vector3 Swizzle(this Vector2 self, int x, int y, int z) => new Vector3(self[x], self[y], self[z]);
+        public static Vector3 ToV3(this Vector4 v4, string xyz) => new Vector3(v4.Get(xyz[0]), v4.Get(xyz[1]), v4.Get(xyz[2]));
+        public static Vector3 ToV3(this Vector3 v3, string xyz) => new Vector3(v3.Get(xyz[0]), v3.Get(xyz[1]), v3.Get(xyz[2]));
+        public static Vector3 ToV3(this Vector2 v2, string xyz) => new Vector3(v2.Get(xyz[0]), v2.Get(xyz[1]), v2.Get(xyz[2]));
         // V4
-        public static Vector4 Swizzle(this Vector4 self, int x, int y, int z, int w) => new Vector4(self[x], self[y], self[z], self[w]);
-        public static Vector4 Swizzle(this Vector3 self, int x, int y, int z, int w) => new Vector4(self[x], self[y], self[z], self[w]);
-        public static Vector4 Swizzle(this Vector2 self, int x, int y, int z, int w) => new Vector4(self[x], self[y], self[z], self[w]);
+        public static Vector4 ToV4(this Vector4 v4, string xyzw) => new Vector4(v4.Get(xyzw[0]), v4.Get(xyzw[1]), v4.Get(xyzw[2]), v4.Get(xyzw[3]));
+        public static Vector4 ToV4(this Vector3 v3, string xyzw) => new Vector4(v3.Get(xyzw[0]), v3.Get(xyzw[1]), v3.Get(xyzw[2]), v3.Get(xyzw[3]));
+        public static Vector4 ToV4(this Vector2 v2, string xyzw) => new Vector4(v2.Get(xyzw[0]), v2.Get(xyzw[1]), v2.Get(xyzw[2]), v2.Get(xyzw[3]));
         // V2 INT
-        public static Vector2Int Swizzle(this Vector3Int self, int x, int y) => new Vector2Int(self[x], self[y]);
-        public static Vector2Int Swizzle(this Vector2Int self, int x, int y) => new Vector2Int(self[x], self[y]);
+        public static Vector2Int ToV2Int(this Vector3Int v3, string xy) => new Vector2Int(v3.Get(xy[0]), v3.Get(xy[1]));
+        public static Vector2Int ToV2Int(this Vector2Int v2, string xy) => new Vector2Int(v2.Get(xy[0]), v2.Get(xy[1]));
         // V3 INT
-        public static Vector3Int Swizzle(this Vector3Int self, int x, int y, int z) => new Vector3Int(self[x], self[y], self[z]);
-        public static Vector3Int Swizzle(this Vector2Int self, int x, int y, int z) => new Vector3Int(self[x], self[y], self[z]);
+        public static Vector3Int ToV3Int(this Vector3Int v3, string xyz) => new Vector3Int(v3.Get(xyz[0]), v3.Get(xyz[1]), v3.Get(xyz[1]));
+        public static Vector3Int ToV3Int(this Vector2Int v2, string xyz) => new Vector3Int(v2.Get(xyz[0]), v2.Get(xyz[1]), v2.Get(xyz[1]));
+        // Helpers
+        private static float Get(this Vector2 v, char c)
+        {
+            switch (c)
+            {
+                case 'x': case 'r': return v[0];
+                case 'y': case 'g': return v[1];
+                default: return c - '0';
+            }
+        }
+        private static float Get(this Vector3 v, char c)
+        {
+            switch (c)
+            {
+                case 'x': case 'r': return v[0];
+                case 'y': case 'g': return v[1];
+                case 'z': case 'b': return v[2];
+                default: return c - '0';
+            }
+        }
+        private static float Get(this Vector4 v, char c)
+        {
+            switch (c)
+            {
+                case 'x': case 'r': return v[0];
+                case 'y': case 'g': return v[1];
+                case 'z': case 'b': return v[2];
+                case 'w': case 'a': return v[3];
+                default: return c - '0';
+            }
+        }
+        private static int Get(this Vector2Int v, char c)
+        {
+            switch (c)
+            {
+                case 'x': case 'r': return v[0];
+                case 'y': case 'g': return v[1];
+                default: return c - '0';
+            }
+        }
+        private static int Get(this Vector3Int v, char c)
+        {
+            switch (c)
+            {
+                case 'x': case 'r': return v[0];
+                case 'y': case 'g': return v[1];
+                case 'z': case 'b': return v[2];
+                default: return c - '0';
+            }
+        }
         #endregion
     }
 }
