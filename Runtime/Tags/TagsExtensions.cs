@@ -28,14 +28,11 @@ namespace DesignPatterns
             return checkTagsList.Count == 0;
         }
 
-        public static T GetComponentWithTagsInChildren<T>(this GameObject self, bool throwWarningIfNull, params string[] checkTags) where T : Component
+
+
+        public static T GetComponentWithTagsInChildren<T>(this GameObject self, params string[] checkTags) where T : Component
         {
-            T component = GetComponentWithTagsInChildren<T>(self, checkTags.ToList(), new List<string>());
-            if (throwWarningIfNull && component == null)
-            {
-                Debug.LogWarning($"TagFind: Gameobject {self.name} requested a {typeof(T)} with tags {String.Join(", ", checkTags)} but did not find it.");
-            }
-            return component;
+            return GetComponentWithTagsInChildren<T>(self, checkTags.ToList(), new List<string>());
         }
 
         public static T GetComponentWithTagsInChildren<T>(this GameObject self, List<string> remainingTags, List<string> foundTags) where T : Component

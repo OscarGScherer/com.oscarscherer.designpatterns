@@ -6,19 +6,16 @@ using UnityEditor;
 
 namespace DesignPatterns
 {
-    [CustomEditor(typeof(MonoBehaviour), true)]
     public class MonoBehaviourEditor : Editor
     {
         public override void OnInspectorGUI()
         {
             Type type = target.GetType();
-            Attribute displayInterfacesAttribute = Attribute.GetCustomAttribute(type, typeof(DisplayInterfacesAttribute));
-            if (displayInterfacesAttribute != null)
-                DisplayInterfacesOf(type);
-
+            DisplayInterfacesAttribute displayInterfacesAttribute = GetAttribute<DisplayInterfacesAttribute>(type);
+            if (displayInterfacesAttribute != null) DisplayInterfacesOf(type);
             base.OnInspectorGUI();
         }
-        
+
         private static void DisplayInterfacesOf(Type type)
         {
             GUIStyle textArea = new GUIStyle(GUI.skin.label) { wordWrap = true, alignment = TextAnchor.UpperRight, padding = new RectOffset(2, 2, 2, 2) };
@@ -27,9 +24,16 @@ namespace DesignPatterns
 
             Type[] interfaces = type.GetInterfaces();
             if (interfaces == null || interfaces.Count() == 0) return;
-            string interfacesString = String.Join("</color>] - [<color=\"cyan\">", interfaces.Select(I => I.Name).ToArray());
-            EditorGUILayout.LabelField($"[<color=\"cyan\">{interfacesString}</color>]", textArea);
+            string label = "";
+            for (int i = 0; i < interfaces.Length; i++)
+            {
+                string color = GetAttribute<ColorAttribute>(interfaces[i])?.color ?? "white";
+                label += $"[<color=\"{color}\">{interfaces[i].Name}</color>]";
+            }
+            EditorGUILayout.LabelField(label, textArea);
         }
+        
+        private static T GetAttribute<T>(Type type) where T : Attribute => (T) Attribute.GetCustomAttribute(type, typeof(T));
     }
 }
 #endif

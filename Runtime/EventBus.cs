@@ -12,7 +12,7 @@ namespace DesignPatterns
     /// <typeparam name="T">
     /// The type of the paramenter the event takes.
     /// </typeparam>
-    public static class EventBus<T>
+    public static class EventBus<T, E> where E: Enum
     {
         public class BusEvent
         {
@@ -28,8 +28,7 @@ namespace DesignPatterns
         /// </summary>
         /// <param name="eventEnum"> Enum value of the event. </param>
         /// <param name="action"> The action to add as listener. </param>
-        public static void RegisterToEvent<E>(E eventEnum, UnityAction<T> action)
-        where E : Enum
+        public static void RegisterToEvent(E eventEnum, UnityAction<T> action)
         {
             (Type, Enum) key = (typeof(T), eventEnum);
             BusEvent busEvent;
@@ -46,8 +45,7 @@ namespace DesignPatterns
         /// </summary>
         /// <param name="eventEnum"> Enum value of the event. </param>
         /// <param name="action">Action to remove as listener.</param>
-        public static void UnregisterFromEvent<E>(E eventEnum, UnityAction<T> action)
-        where E : Enum
+        public static void UnregisterFromEvent(E eventEnum, UnityAction<T> action)
         {
             (Type, Enum) key = (typeof(T), eventEnum);
             BusEvent busEvent;
@@ -62,8 +60,7 @@ namespace DesignPatterns
         /// <param name="param">
         /// The parameter that will be passed to all listeners.
         /// </param>
-        public static void RaiseEvent<E>(E eventEnum, T param)
-        where E : Enum
+        public static void RaiseEvent(E eventEnum, T param)
         {
             (Type, Enum) key = (typeof(T), eventEnum);
             BusEvent busEvent;
