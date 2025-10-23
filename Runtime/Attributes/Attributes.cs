@@ -1,14 +1,22 @@
+using System;
 using UnityEngine;
 
 namespace DesignPatterns
 {
-    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class DisplayInterfacesAttribute : PropertyAttribute { }
 
-    [System.AttributeUsage(System.AttributeTargets.All, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = false)]
     public class ColorAttribute : PropertyAttribute
     {
         public readonly string color;
         public ColorAttribute(string color) => this.color = color;
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class ButtonAttribute : PropertyAttribute
+    {
+        public readonly string Label;
+        public ButtonAttribute(string label = null) => Label = label;
     }
 }
