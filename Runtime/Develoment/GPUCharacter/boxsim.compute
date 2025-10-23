@@ -1,0 +1,80 @@
+  #pragma kernel UpdateBoxGroup
+
+uniform float _DeltaTime = 0.1;
+uniform float2 _MaxDisplacement;
+uniform float2 _SlideForce;
+uniform float2 _DisplacerForce;
+uniform float2 _ReboundForce;
+
+// Cummulative internal
+RWStructuredBuffer<float2> _OffsetBuff;
+// Inputs
+StructuredBuffer<float> _SimulationScalesBuff;
+StructuredBuffer<float4x4> _ObjectToWorldBuff;
+// Output
+RWStructuredBuffer<uint> _NumBoxesInDisplacerBuff;
+
+uniform float4x4 _DisplacerWorldToLocal;
+uniform float4x4 _DisplacerLocalToWorld;
+uniform float4 _DisplacerCutoffNormal;
+
+static const float4 localPositions[8] = {
+    float4(0.0, -0.45, 0.35, 0.0),
+    float4(0.0, -0.9,  0.35, 0.0),
+    float4(0.0, -1.35, 0.35, 0.0),
+    float4(0.0, -1.8,  0.35, 0.0),
+    float4(0.0, -0.45, -0.35, 0.0),
+    float4(0.0, -0.9,  -0.35, 0.0),
+    float4(0.0, -1.35, -0.35, 0.0),
+    float4(0.0, -1.8,  -0.35, 0.0),
+};
+
+float3 ProjectVector(float3 a, float3 b)
+{
+    return dot(a, b) / dot(b, b) * b;
+}
+
+float Clamp0Inf(float value)
+{
+    return value < 0 ? 0 : value;
+}
+
+[numthreads(8,1,1)]
+void UpdateBoxGroup(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID)
+{
+    float4x4 otw = _ObjectToWorldBuff[groupID.x];
+    float distToCenter = length(localPositions[groupThreadID.x] - float4(0,-1,0,0));
+
+    int offsetBuffIndex = groupID.x * 8 + groupThreadID.x;
+    float2 prevOffset = _OffsetBuff[offsetBuffIndex];
+
+    float4 boxWP = mul(otw, float4(localPositions[groupThreadID.x].xyz, 1) + float4(prevOffset.x, 0, prevOffset.y, 0));
+    float4 displacerLP = mul(_DisplacerWorldToLocal, float4(boxWP.xyz, 1));
+    float isInsideDisplacer = all(abs(displacerLP.xyz) <= 0.5) && dot((boxWP - mul(_DisplacerLocalToWorld, float4(0,0,0,1))).xyz, _DisplacerCutoffNormal.xyz) >= 0 ? _SimulationScalesBuff[groupID.x] : 0.0;
+
+    if (isInsideDisplacer > 0.0)
+        InterlockedAdd(_NumBoxesInDisplacerBuff[0], 1);
+
+    float4 displacementWP = mul(_DisplacerLocalToWorld, float4(0,0,1,0)) * (0.5 - displacerLP.z);
+    
+    float4 boxRightWP = mul(otw, float4(1,0,0,0));
+    float4 boxForwardWP = mul(otw, float4(0,0,1,0));
+
+    float xDisplacement = sign(dot(displacementWP, boxRightWP)) * length(ProjectVector(displacementWP.xyz, boxRightWP.xyz)) * isInsideDisplacer * _DisplacerForce.x * _DeltaTime;
+    float zDisplacement = sign(dot(displacementWP, boxForwardWP)) * length(ProjectVector(displacementWP.xyz, boxForwardWP.xyz)) * isInsideDisplacer * _DisplacerForce.x * _DeltaTime;
+
+    float slideMultiplier = _DeltaTime * _SimulationScalesBuff[groupID.x];
+    xDisplacement += -boxRightWP.y * slideMultiplier * _SlideForce.x;
+    zDisplacement += -boxForwardWP.y * slideMultiplier * _SlideForce.y;
+
+    float2 rebound = float2(
+        _DeltaTime * distToCenter * - sign(prevOffset.x) * abs(prevOffset.x) * _ReboundForce.x * (1 - isInsideDisplacer),
+        _DeltaTime * distToCenter * - sign(prevOffset.y) * abs(prevOffset.y) * _ReboundForce.y * (1 - isInsideDisplacer)
+    );
+
+    _OffsetBuff[offsetBuffIndex] = float2(
+        clamp(xDisplacement + prevOffset.x + rebound.x, -_MaxDisplacement.x, _MaxDisplacement.x),
+        clamp(zDisplacement + prevOffset.y + rebound.y, -_MaxDisplacement.y, _MaxDisplacement.y)
+    );
+
+}
