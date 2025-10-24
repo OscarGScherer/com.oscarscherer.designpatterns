@@ -1,87 +1,130 @@
 using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace DesignPatterns
 {
-    [ExecuteInEditMode]
-    public class GPUCharacter : MonoBehaviour
+
+    [CreateAssetMenu(menuName = "GPUCharacter")]
+    public class GPUCharacter : ScriptableObject
     {
-        #region Constants
+        [Header("CPU Data")]
+        public CPUCharacter cpuCharacter;
+        public List<AnimationClip> animations;
 
-        private const int Max_Characters = 512;
-        private readonly int _OTWBufferID = Shader.PropertyToID("_ObjectToWorldBuff");
-        private readonly int _NumCharactersID = Shader.PropertyToID("_NumCharacters");
+        [Header("Intermediate Data")]
+        public List<string> bonePaths;
 
-        #endregion
+        [Header("GPU Data")]
+        public uint numBones;
+        public uint[] vertexToBones;
 
-        #region Public
 
-        public Mesh mesh;
-        public List<Transform> transforms;
-
-        #endregion
-
-        #region Private
-
-        private Material renderMaterial;
-        private RenderParams renderParams;
-
-        private GraphicsBuffer _indirectDrawCommandBuff;
-        private GraphicsBuffer.IndirectDrawIndexedArgs[] _indirectDrawCommandArray;
-
-        private ComputeBuffer _ObjectToWorldBuff;
-        private Matrix4x4[] _ObjectToWorldArray = new Matrix4x4[Max_Characters];
-
-        #endregion
-
-        void OnEnable()
+        [Button("Test")]
+        void Convert()
         {
-            // Releasing buffers just in case
-            _ObjectToWorldBuff?.Release();
-            _indirectDrawCommandBuff?.Release();
+            if (cpuCharacter == null) return;
 
-            // Initializing buffers
-            _ObjectToWorldBuff = new ComputeBuffer(Max_Characters, sizeof(float) * 16, ComputeBufferType.Default);
-
-            // Initializing material
-            renderMaterial = renderMaterial.IfNull(() => new Material(Shader.Find("IndirectDraw/GPUGuy")));
-
-            renderParams = new RenderParams(renderMaterial);
-            renderParams.worldBounds = new Bounds(Vector3.zero, 1000 * Vector3.one);
-            renderParams.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-            renderParams.receiveShadows = true;
-
-            renderParams.matProps = new MaterialPropertyBlock();
-            renderParams.matProps.SetBuffer(_OTWBufferID, _ObjectToWorldBuff);
-
-            _indirectDrawCommandBuff = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size);
-            _indirectDrawCommandArray = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
+            numBones = (uint)cpuCharacter.smr.bones.Length;
+            vertexToBones = cpuCharacter.smr.sharedMesh.boneWeights.Select(bw => (uint)bw.boneIndex0).ToArray();
+            bonePaths = GetBonePaths(cpuCharacter.smr);
+            // EditorCurveBinding[] bindings = AnimationUtility.GetCurveBindings(animationClip);
+            // object value = bindings.GetValue(0);
+            // AnimationCurve curve = AnimationUtility.GetEditorCurve(animationClip, bindings[0]);
+            // curve.Evaluate(0);
+            // Debug.Log("Test");
         }
 
-        void OnDisable()
+        /// <summary>
+        /// Returns a list of bone transform paths (relative to the root bone or model root)
+        /// for a given SkinnedMeshRenderer.
+        /// </summary>
+        public static List<string> GetBonePaths(SkinnedMeshRenderer skinnedMeshRenderer)
         {
-            _ObjectToWorldBuff?.Release();
-            _indirectDrawCommandBuff?.Release();
+            if (skinnedMeshRenderer == null)
+            {
+                Debug.LogError("SkinnedMeshRenderer is null!");
+                return null;
+            }
+
+            var bonePaths = new List<string>();
+            Transform[] bones = skinnedMeshRenderer.bones;
+
+            // Use the root bone as the path root if available,
+            // otherwise use the renderer's transform
+            Transform root = skinnedMeshRenderer.rootBone != null
+                ? skinnedMeshRenderer.rootBone
+                : skinnedMeshRenderer.transform.root;
+
+            foreach (Transform bone in bones)
+            {
+                string path = GetTransformPath(bone, root);
+                bonePaths.Add(path);
+            }
+
+            return bonePaths;
         }
 
-        void Update()
+        /// <summary>
+        /// Recursively constructs a path from the root to the target transform.
+        /// Example result: "Armature/Hips/Spine/Chest/RightShoulder"
+        /// </summary>
+        private static string GetTransformPath(Transform target, Transform root)
         {
-            if (mesh == null || transforms == null) return;
-
-            int numCharacters = transforms.Count;
-            if (numCharacters <= 0) return;
-
-            for (int i = 0; i < numCharacters; i++)
-                _ObjectToWorldArray[i] = transforms[i] == null ? Matrix4x4.identity : transforms[i].localToWorldMatrix;
-
-            _ObjectToWorldBuff.SetData(_ObjectToWorldArray);
-
-            renderParams.matProps.SetInteger(_NumCharactersID, numCharacters);
-            _indirectDrawCommandArray[0].indexCountPerInstance = mesh.GetIndexCount(0);
-            _indirectDrawCommandArray[0].instanceCount = (uint)numCharacters;
-
-            _indirectDrawCommandBuff.SetData(_indirectDrawCommandArray);
-            Graphics.RenderMeshIndirect(renderParams, mesh, _indirectDrawCommandBuff);
+            if (target == null)
+                return string.Empty;
+            string path = target.name;
+            Transform current = target.parent;
+            while (current != null && current != root)
+            {
+                path = current.name + "/" + path;
+                current = current.parent;
+            }
+            return path;
         }
+
+        public static List<string> GetAllBonePaths(Transform root)
+        {
+            var paths = new List<string>();
+            CollectPathsRecursive(root, "", paths);
+            return paths;
+        }
+
+        private static void CollectPathsRecursive(Transform current, string currentPath, List<string> paths)
+        {
+            string newPath = string.IsNullOrEmpty(currentPath) ? current.name : $"{currentPath}/{current.name}";
+            paths.Add(newPath);
+            foreach (Transform child in current) CollectPathsRecursive(child, newPath, paths);
+        }
+    }
+
+    public struct GPUAnimationRig
+    {
+        public BoneWeight[] boneWeights;
+    }
+
+    public struct GPUCharacterAnimationData
+    {
+        public GPUAnimationRig rig;
+        public GPUAnimation[] animations;
+    }
+
+    public struct GPUAnimation
+    {
+        public GPUAnimationKeyframe[] frames;
+    }
+
+    public struct GPUAnimationKeyframe
+    {
+        public float duration;
+        public GPUBoneTransform[] bones;
+    }
+
+    public struct GPUBoneTransform
+    {
+        public Vector4 position;
+        public Vector4 rotation;
+        public Vector4 scale;
     }
 }

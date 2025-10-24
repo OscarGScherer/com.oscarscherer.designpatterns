@@ -8,7 +8,12 @@ Shader "IndirectDraw/GPUGuy"
 
     #pragma target 5.0
 
-    uniform int _NumCharacters; 
+    #define MAX_BONES 32
+
+    uniform int _NumCharacters;
+    uniform uint _NumBones;
+    StructuredBuffer<uint> _VertexBoneBuff;
+    StructuredBuffer<float4x4> _EvaluatedAnimationsBuff;
     StructuredBuffer<float4x4> _ObjectToWorldBuff;
 
     ENDHLSL
@@ -32,13 +37,15 @@ Shader "IndirectDraw/GPUGuy"
                 float4 debug : COLOR0;
             };
 
-            v2f vert(appdata_base v, uint svInstanceID : SV_InstanceID)
+            v2f vert(appdata_base v, uint svInstanceID : SV_InstanceID, uint svVertexID : SV_VertexID)
             {
                 InitIndirectDrawArgs(0);
                 uint iID = GetIndirectInstanceID(svInstanceID);
-
                 v2f o;
-                float4 wpos = mul(_ObjectToWorldBuff[iID % _NumCharacters], v.vertex);
+                float4 wpos = mul(
+                    _ObjectToWorldBuff[iID % _NumCharacters], 
+                    mul(_EvaluatedAnimationsBuff[(iID % _NumCharacters) * _NumBones + _VertexBoneBuff[svVertexID]], v.vertex)
+                );
                 o.pos = mul(UNITY_MATRIX_VP, wpos);
                 o.uv = v.texcoord;
                 o.debug = float4(1,0,0,1);
