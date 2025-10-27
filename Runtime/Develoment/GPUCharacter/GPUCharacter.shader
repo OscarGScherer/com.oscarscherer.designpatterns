@@ -10,11 +10,21 @@ Shader "IndirectDraw/GPUCharacter"
 
     #define MAX_BONES 32
 
+    struct BoneRTS
+    {
+        float4 pos;     // w = 0, not used
+        float4 rot;     // Quaternion
+        float4 scale;   // w = 0, not used
+    };
+
     uniform int _NumCharacters;
     uniform int _NumBones;
-    StructuredBuffer<uint> _V2B;
+    StructuredBuffer<int> _V2B;
     StructuredBuffer<float4x4> _PoseMatrices;
     StructuredBuffer<float4x4> _ObjectToWorldBuff;
+    StructuredBuffer<float4> _BoneBindPos;
+
+    StructuredBuffer<BoneRTS> _PoseRTSs;
 
     ENDHLSL
 
@@ -37,20 +47,27 @@ Shader "IndirectDraw/GPUCharacter"
                 float4 debug : COLOR0;
             };
 
+            float3 RVQ(float3 v, float4 q)
+            {
+                float3 t = 2.0 * cross(q.xyz, v);
+                return v + q.w * t + cross(q.xyz, t);
+            }
+
             v2f vert(appdata_base v, uint svInstanceID : SV_InstanceID, uint svVertexID : SV_VertexID)
             {
                 InitIndirectDrawArgs(0);
                 uint iID = GetIndirectInstanceID(svInstanceID);
                 v2f o;
-                // float4 wpos = mul(
-                //     _ObjectToWorldBuff[iID % _NumCharacters], 
-                //     mul(_PoseMatrices[(iID % _NumCharacters) * _NumBones + _V2B[svVertexID]], v.vertex)
-                // );
-                float4 wpos = mul(_ObjectToWorldBuff[iID % _NumCharacters], v.vertex);
+                BoneRTS rts = _PoseRTSs[(iID % _NumCharacters) * _NumBones + _V2B[svVertexID]];
+                float4 wpos = mul(
+                    _ObjectToWorldBuff[iID % _NumCharacters], 
+                    v.vertex - _BoneBindPos[svVertexID] + rts.pos
+                );
+                // float4 wpos = mul(_ObjectToWorldBuff[iID % _NumCharacters], v.vertex);
                 o.pos = mul(UNITY_MATRIX_VP, wpos);
                 o.uv = v.texcoord;
                 float4x4 test = _PoseMatrices[(iID % _NumCharacters) * _NumBones + _V2B[svVertexID]];
-                o.debug = float4(test[3].xyz,1);
+                o.debug = float4(_V2B[svVertexID] == 14, 0, 0, 1);
                 return o;
             }
 

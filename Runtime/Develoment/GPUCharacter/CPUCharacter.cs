@@ -34,6 +34,7 @@ namespace DesignPatterns
         public int numBones;
         public int numAnimations;
         public int[] v2b; // rig
+        public Vector4[] tPoseBonePositions;
         public float[] frameTimes;
         public GPUAnimationMeta[] animationMetas;
         public GPUBoneTRS[] boneRTSs;

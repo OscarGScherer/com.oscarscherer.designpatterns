@@ -8,9 +8,9 @@ namespace DesignPatterns
     {
         #region Constants
         private static ComputeShader _GPUAnimatorCS;
-        private static int _GPUAnimCSKernel;
+        private int _GPUAnimCSKernel;
 
-        private const int Max_Characters = 512;
+        private const int Max_Characters = 1;
         private readonly int _NumCharactersID = Shader.PropertyToID("_NumCharacters");
         private readonly int _OTWBufferID = Shader.PropertyToID("_ObjectToWorldBuff");
         
@@ -25,6 +25,8 @@ namespace DesignPatterns
         private readonly int _C2AID = Shader.PropertyToID("_C2A");  // Which animation each character is playing
         private readonly int _C2TID = Shader.PropertyToID("_C2T");  // At what point of the animation each character is in
         private readonly int _PoseMatricesID = Shader.PropertyToID("_PoseMatrices"); // Managed entirely by the GPU
+        private readonly int _BoneBindPosID = Shader.PropertyToID("_BoneBindPos");
+        private readonly int _PoseRTSsID = Shader.PropertyToID("_PoseRTSs");
 
         #endregion
 
@@ -47,14 +49,19 @@ namespace DesignPatterns
         private GraphicsBuffer.IndirectDrawIndexedArgs[] _indirectDrawCommandArray;
         private ComputeBuffer _ObjectToWorldBuff;
         // Static animation buffers
-        private ComputeBuffer _AMetasBuff, _FrameTimesBuff, _BoneRTSsBuff, _V2BBuff;
+        private ComputeBuffer _AMetasBuff, _FrameTimesBuff, _BoneRTSsBuff, _V2BBuff, _BoneBindPosBuff, _PoseRTSsBuff;
         // Variable buffers
         private ComputeBuffer _C2ABuff, _C2TBuff;
         private ComputeBuffer _PoseMatricesBuff;
 
-        private Matrix4x4[] _ObjectToWorldArray = new Matrix4x4[Max_Characters];
-        
+        private Matrix4x4[] _ObjectToWorldArray;
+
         #endregion
+
+        // Debug
+        public Matrix4x4[] test;
+        public float[] debug;
+        private ComputeBuffer _Debug;
 
         private void ReleaseBuffers()
         {
@@ -67,6 +74,10 @@ namespace DesignPatterns
             _C2ABuff?.Release();
             _C2TBuff?.Release();
             _PoseMatricesBuff?.Release();
+            _Debug?.Release();
+            _BoneBindPosBuff?.Release();
+            _PoseRTSsBuff?.Release();
+            _gpuAnimatorCSInstance = null;
         }
 
         void OnEnable()
@@ -76,12 +87,15 @@ namespace DesignPatterns
 
             if (cpuCharacter?.gpuAnimatorData == null) return;
 
+            _ObjectToWorldArray = new Matrix4x4[Max_Characters];
+
             if (_GPUAnimatorCS == null)
             {
                 _GPUAnimatorCS = Resources.Load<ComputeShader>("GPUAnimator");
-                _GPUAnimCSKernel = _GPUAnimatorCS.FindKernel("EvaluatePoses");
             }
+
             _gpuAnimatorCSInstance = _gpuAnimatorCSInstance == null ? Instantiate(_GPUAnimatorCS) : _gpuAnimatorCSInstance;
+            _GPUAnimCSKernel = _gpuAnimatorCSInstance.FindKernel("EvaluatePoses");
 
             // Initializing buffers
             _ObjectToWorldBuff = new ComputeBuffer(Max_Characters, sizeof(float) * 16, ComputeBufferType.Default);
@@ -92,17 +106,13 @@ namespace DesignPatterns
             _FrameTimesBuff = new ComputeBuffer(animData.frameTimes.Length, sizeof(float), ComputeBufferType.Default);
             _BoneRTSsBuff = new ComputeBuffer(animData.boneRTSs.Length, GPUBoneTRS.SizeInBytes(), ComputeBufferType.Default);
             _V2BBuff = new ComputeBuffer(animData.v2b.Length, sizeof(int), ComputeBufferType.Default);
-            _AMetasBuff.SetData(animData.animationMetas);
-            _FrameTimesBuff.SetData(animData.frameTimes);
-            _BoneRTSsBuff.SetData(animData.boneRTSs);
-            _V2BBuff.SetData(animData.v2b);
+            _BoneBindPosBuff = new ComputeBuffer(animData.tPoseBonePositions.Length, sizeof(float) * 4, ComputeBufferType.Default);
 
             // Variable buffers
             _C2ABuff = new ComputeBuffer(Max_Characters, sizeof(int), ComputeBufferType.Default);
             _C2TBuff = new ComputeBuffer(Max_Characters, sizeof(float), ComputeBufferType.Default);
             _PoseMatricesBuff = new ComputeBuffer(Max_Characters * animData.numBones, sizeof(float) * 16, ComputeBufferType.Default);
-            Matrix4x4[] posesInit = Matrix4x4.identity.RepeatForArray(Max_Characters * animData.numBones);
-            _PoseMatricesBuff.SetData(posesInit);
+            _PoseRTSsBuff = new ComputeBuffer(Max_Characters * animData.numBones, sizeof(float) * 12, ComputeBufferType.Default);
 
             // Initializing compute shader
             _gpuAnimatorCSInstance.SetInt(_NumBonesID, animData.numBones);
@@ -112,6 +122,7 @@ namespace DesignPatterns
             _gpuAnimatorCSInstance.SetBuffer(_GPUAnimCSKernel, _C2AID, _C2ABuff);
             _gpuAnimatorCSInstance.SetBuffer(_GPUAnimCSKernel, _C2TID, _C2TBuff);
             _gpuAnimatorCSInstance.SetBuffer(_GPUAnimCSKernel, _PoseMatricesID, _PoseMatricesBuff);
+            _gpuAnimatorCSInstance.SetBuffer(_GPUAnimCSKernel, _PoseRTSsID, _PoseRTSsBuff);
 
             // Initializing material
             _renderMaterial = _renderMaterial.IfNull(() => new Material(Shader.Find("IndirectDraw/GPUCharacter")));
@@ -126,9 +137,26 @@ namespace DesignPatterns
             _renderParams.material.SetBuffer(_V2BID, _V2BBuff);
             _renderParams.material.SetBuffer(_PoseMatricesID, _PoseMatricesBuff);
             _renderParams.matProps.SetBuffer(_OTWBufferID, _ObjectToWorldBuff);
+            _renderParams.matProps.SetBuffer(_BoneBindPosID, _BoneBindPosBuff);
+            _renderParams.matProps.SetBuffer(_PoseRTSsID, _PoseRTSsBuff);
+
+            // Initializing buffers
+            _AMetasBuff.SetData(animData.animationMetas);
+            _FrameTimesBuff.SetData(animData.frameTimes);
+            _BoneRTSsBuff.SetData(animData.boneRTSs);
+            _V2BBuff.SetData(animData.v2b);
+            Matrix4x4[] posesInit = Matrix4x4.identity.RepeatForArray(Max_Characters * animData.numBones);
+            _PoseMatricesBuff.SetData(posesInit);
+            _BoneBindPosBuff.SetData(animData.tPoseBonePositions);
+            _PoseRTSsBuff.SetData(new GPUBoneTRS().RepeatForArray(Max_Characters * animData.numBones));
 
             _indirectDrawCommandBuff = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size);
             _indirectDrawCommandArray = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
+
+            test = new Matrix4x4[Max_Characters * animData.numBones];
+            debug = new float[Max_Characters * animData.numBones];
+            _Debug = new ComputeBuffer(Max_Characters * animData.numBones, sizeof(float), ComputeBufferType.Default);
+            _gpuAnimatorCSInstance.SetBuffer(_GPUAnimCSKernel, Shader.PropertyToID("_Debug"), _Debug);
         }
 
         void OnDisable()
@@ -143,7 +171,7 @@ namespace DesignPatterns
             int numCharacters = transforms.Count;
             if (numCharacters <= 0) return;
 
-            for (int i = 0; i < numCharacters; i++)
+            for (int i = 0; i < numCharacters && i < Max_Characters; i++)
                 _ObjectToWorldArray[i] = transforms[i] == null ? Matrix4x4.identity : transforms[i].localToWorldMatrix;
 
             // Below is WIP
@@ -154,6 +182,9 @@ namespace DesignPatterns
             _C2TBuff.SetData(animTime.RepeatForArray(Max_Characters));
             _gpuAnimatorCSInstance.SetInt(_NumCharactersID, numCharacters);
             _gpuAnimatorCSInstance.Dispatch(_GPUAnimCSKernel, numCharacters, 1, 1);
+
+            _PoseMatricesBuff.GetData(test);
+            _Debug.GetData(debug);
 
             _renderParams.matProps.SetInteger(_NumCharactersID, numCharacters);
 

@@ -24,6 +24,13 @@ public class CPUCharacterEditor : EditorAttributes
             cpuCharacter.animations = cpuCharacter.animations.Where(a => a != null).ToList();
             animData.numAnimations = cpuCharacter.animations.Count;
 
+            // Calculating tPose postions for every bone in object space
+            List<GPUBoneTRS> tPose = new List<GPUBoneTRS>();
+            foreach (Transform bone in cpuCharacter.smr.bones) tPose.Add(GetRelativeTRS(bone, cpuCharacter.animator.transform));
+
+            Transform[] bones = cpuCharacter.smr.bones;
+            animData.tPoseBonePositions = bones.Select(b => (Vector4) cpuCharacter.animator.transform.InverseTransformPoint(b.position)).ToArray();
+
             List<GPUAnimationMeta> animMetas = new();
             List<GPUBoneTRS> boneTRSs = new();
             List<float> frameTimes = new();
@@ -39,15 +46,20 @@ public class CPUCharacterEditor : EditorAttributes
                 {
                     frameTimes.Add(time / clip.length);
                     clip.SampleAnimation(cpuCharacter.animator.gameObject, time);
-                    foreach (Transform bone in cpuCharacter.smr.bones)
+                    for (int bInd = 0; bInd < animData.numBones; bInd++)
                     {
-                        Matrix4x4 boneToObject = worldToObject * bone.localToWorldMatrix;
-                        Decompose(boneToObject, out Vector3 pos, out Quaternion rot, out Vector3 scale);
+                        GPUBoneTRS boneTRS = GetRelativeTRS(bones[bInd], cpuCharacter.animator.transform);
                         boneTRSs.Add(new GPUBoneTRS()
                         {
-                            position = pos,
-                            rotation = new Vector4(rot.x, rot.y, rot.z, rot.w),
-                            scale = scale
+                            position = boneTRS.position,
+                            rotation = QToV4(V4ToQ(boneTRS.rotation) * Quaternion.Inverse(V4ToQ(tPose[bInd].rotation))),
+                            // rotation = QToV4(bones[bInd].localRotation),
+                            scale = new Vector4(
+                                boneTRS.scale.x / tPose[bInd].scale.x,
+                                boneTRS.scale.y / tPose[bInd].scale.y,
+                                boneTRS.scale.z / tPose[bInd].scale.z,
+                                0
+                            )
                         });
                     }
                 }
@@ -56,6 +68,31 @@ public class CPUCharacterEditor : EditorAttributes
             animData.animationMetas = animMetas.ToArray();
             animData.boneRTSs = boneTRSs.ToArray();
         }
+    }
+
+    GPUBoneTRS GetRelativeTRS(Transform target, Transform root)
+    {
+        return new GPUBoneTRS
+        {
+            position = root.InverseTransformPoint(target.position),
+            rotation = QToV4(Quaternion.Inverse(root.rotation) * target.rotation),
+            scale = GetRelativeScale(target, root)
+        };
+    }
+
+    Vector4 QToV4(Quaternion q) => new Vector4(q.x, q.y, q.z, q.w);
+    Quaternion V4ToQ(Vector4 v4) => new Quaternion(v4.x, v4.y, v4.z, v4.w);
+
+    Vector4 GetRelativeScale(Transform target, Transform root)
+    {
+        Vector3 worldScaleTarget = target.lossyScale;
+        Vector3 worldScaleRoot = root.lossyScale;
+        return new Vector4(
+            worldScaleTarget.x / worldScaleRoot.x,
+            worldScaleTarget.y / worldScaleRoot.y,
+            worldScaleTarget.z / worldScaleRoot.z,
+            0
+        );
     }
     
     private static void Decompose(Matrix4x4 matrix, out Vector3 pos, out Quaternion rot, out Vector3 scale)
