@@ -83,48 +83,5 @@ namespace DesignPatterns
             }
             return path;
         }
-
-        public static List<string> GetAllBonePaths(Transform root)
-        {
-            var paths = new List<string>();
-            CollectPathsRecursive(root, "", paths);
-            return paths;
-        }
-
-        private static void CollectPathsRecursive(Transform current, string currentPath, List<string> paths)
-        {
-            string newPath = string.IsNullOrEmpty(currentPath) ? current.name : $"{currentPath}/{current.name}";
-            paths.Add(newPath);
-            foreach (Transform child in current) CollectPathsRecursive(child, newPath, paths);
-        }
-    }
-
-    public struct GPUAnimationRig
-    {
-        public BoneWeight[] boneWeights;
-    }
-
-    public struct GPUCharacterAnimationData
-    {
-        public GPUAnimationRig rig;
-        public GPUAnimation[] animations;
-    }
-
-    public struct GPUAnimation
-    {
-        public GPUAnimationKeyframe[] frames;
-    }
-
-    public struct GPUAnimationKeyframe
-    {
-        public float duration;
-        public GPUBoneTransform[] bones;
-    }
-
-    public struct GPUBoneTransform
-    {
-        public Vector4 position;
-        public Vector4 rotation;
-        public Vector4 scale;
     }
 }

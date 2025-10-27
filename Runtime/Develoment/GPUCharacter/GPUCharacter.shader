@@ -1,4 +1,4 @@
-Shader "IndirectDraw/GPUGuy"
+Shader "IndirectDraw/GPUCharacter"
 {
     HLSLINCLUDE
 
@@ -11,9 +11,9 @@ Shader "IndirectDraw/GPUGuy"
     #define MAX_BONES 32
 
     uniform int _NumCharacters;
-    uniform uint _NumBones;
-    StructuredBuffer<uint> _VertexBoneBuff;
-    StructuredBuffer<float4x4> _EvaluatedAnimationsBuff;
+    uniform int _NumBones;
+    StructuredBuffer<uint> _V2B;
+    StructuredBuffer<float4x4> _PoseMatrices;
     StructuredBuffer<float4x4> _ObjectToWorldBuff;
 
     ENDHLSL
@@ -42,18 +42,21 @@ Shader "IndirectDraw/GPUGuy"
                 InitIndirectDrawArgs(0);
                 uint iID = GetIndirectInstanceID(svInstanceID);
                 v2f o;
-                float4 wpos = mul(
-                    _ObjectToWorldBuff[iID % _NumCharacters], 
-                    mul(_EvaluatedAnimationsBuff[(iID % _NumCharacters) * _NumBones + _VertexBoneBuff[svVertexID]], v.vertex)
-                );
+                // float4 wpos = mul(
+                //     _ObjectToWorldBuff[iID % _NumCharacters], 
+                //     mul(_PoseMatrices[(iID % _NumCharacters) * _NumBones + _V2B[svVertexID]], v.vertex)
+                // );
+                float4 wpos = mul(_ObjectToWorldBuff[iID % _NumCharacters], v.vertex);
                 o.pos = mul(UNITY_MATRIX_VP, wpos);
                 o.uv = v.texcoord;
-                o.debug = float4(1,0,0,1);
+                float4x4 test = _PoseMatrices[(iID % _NumCharacters) * _NumBones + _V2B[svVertexID]];
+                o.debug = float4(test[3].xyz,1);
                 return o;
             }
 
             float4 frag(v2f i) : SV_Target
             {
+                return i.debug;
                 return float4(i.uv, 0, 1);
             }
             ENDHLSL

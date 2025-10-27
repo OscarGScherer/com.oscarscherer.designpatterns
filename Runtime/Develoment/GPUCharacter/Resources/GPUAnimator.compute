@@ -1,0 +1,112 @@
+#pragma kernel EvaluatePoses
+
+struct AnimationMeta
+{
+    int startFrame;
+    int numberOfFrames;
+};
+
+struct BoneRTS
+{
+    float4 pos;     // w = 0, not used
+    float4 rot;     // Quaternion
+    float4 scale;   // w = 0, not used
+};
+
+uniform int _NumBones;
+StructuredBuffer<AnimationMeta> _AMetas;    // 1 per animation
+StructuredBuffer<float> _FrameTimes;        // 1 per animation frame
+StructuredBuffer<BoneRTS> _BoneRTSs;        // _NumBones * numberOfFrames per animation
+
+uniform int _NumCharacters;
+StructuredBuffer<int> _C2A;                // 1 int per character, representing the animation being player by the character
+StructuredBuffer<float> _C2T;               // 1 float per character, representing the point in the animation each character is in
+RWStructuredBuffer<float4x4> _PoseMatrices; // _NumBones matrices per character
+
+// Groupshared memory
+groupshared int nextFrame;
+groupshared int prevFrame;
+groupshared float frameLerp;
+
+void ComputeFrameIndexes(AnimationMeta meta, float time, out int nextFrame, out int prevFrame, out float frameLerp)
+{
+    int start = meta.startFrame;
+    int end   = start + meta.numberOfFrames - 1;
+    nextFrame = start;
+    float nextFrameTime = 0;
+
+    while (start < end)
+    {
+        nextFrame = (start + end) >> 1; // computed mid point, bitshit equivalent to division since the value is int
+        nextFrameTime = _FrameTimes[nextFrame];
+        if (nextFrameTime < time) start = nextFrame + 1;
+        else end = nextFrame;
+    }
+
+    // Computing prev frame from next frame
+    prevFrame = start == meta.startFrame ? nextFrame : nextFrame - 1;
+    float prevFrameTime = _FrameTimes[prevFrame];
+
+    // Converting to an index for _BonesRTSs
+    nextFrame *= _NumBones;
+    prevFrame *= _NumBones;
+
+    // Computing lerp value
+    frameLerp = (time - prevFrameTime) / (nextFrameTime - prevFrameTime);
+}
+
+[numthreads(64,1,1)]
+void EvaluatePoses(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID)
+{
+    int cID = groupID.x;
+    // Only the first thread of the group computes the frame indexes and lerp value
+    if(groupThreadID.x == 0)
+    {
+        AnimationMeta meta = _AMetas[_C2A[cID]];
+        float time = _C2T[cID];
+        ComputeFrameIndexes(meta, time, /*outs:*/ nextFrame, prevFrame, frameLerp);
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    int boneID = groupThreadID.x;
+    if(boneID >= _NumBones) return;
+    
+    // Already accounts for _NumBones
+    BoneRTS prevRTS = _BoneRTSs[prevFrame + boneID];
+    BoneRTS nextRTS = _BoneRTSs[nextFrame + boneID];
+
+    float3 pos = lerp(prevRTS.pos.xyz, nextRTS.pos.xyz, frameLerp);
+    float4x4 boneMatrix = float4x4(
+        1,      0,      0,      0,
+        0,      1,      0,      0,
+        0,      0,      1,      0,
+        0,      0,      0,      1
+    );
+
+    _PoseMatrices[cID * _NumBones + boneID] = boneMatrix;
+
+    // Leaving rotation and scale for later....
+
+    // float3 scl = lerp(prevRTS.scale.xyz, nextRTS.scale.xyz, frameLerp);
+
+    // float4 r1 = prevRTS.rot;
+    // float4 r2 = nextRTS.rot;
+    // if (dot(r1, r2) < 0) r2 = -r2; // to avoid fliping
+    // float4 rot = normalize(lerp(r1, r2, frameLerp)); // nlerp
+
+    // float y2 = rot.y*rot.y;
+    // float4x4 rotationMatrix = float4x4(
+    //     1 - 2*(rot.y*rot.y + rot.z*rot.z),  2*(rot.x*rot.y - rot.w*rot.z),      2*(rot.x*rot.z + rot.w*rot.y),      0,
+    //     2*(rot.x*rot.y + rot.w*rot.z),      1 - 2*(rot.x*rot.x + rot.z*rot.z),  2*(rot.y*rot.z - rot.w*rot.x),      0,
+    //     2*(rot.x*rot.z - rot.w*rot.y),      2*(rot.y*rot.z + rot.w*rot.x),      1 - 2*(rot.x*rot.x + rot.y*rot.y),  0,
+    //     pos.x,                              pos.y,                              pos.z,                              1
+    // );
+    // float4x4 scaleMatrix = float4x4(
+    //     scl.x, 0, 0, 0,
+    //     0, scl.y, 0, 0,
+    //     0, 0, scl.z, 0,
+    //     0, 0, 0, 1
+    // );
+    // float4x4 boneMatrix = mul(rotationMatrix, scaleMatrix);
+    // boneMatrix[3] = float4(pos, 1.0);
+}
