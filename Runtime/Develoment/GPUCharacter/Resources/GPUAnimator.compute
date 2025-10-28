@@ -22,7 +22,6 @@ uniform int _NumCharacters;
 StructuredBuffer<int> _C2A;                 // 1 int per character, representing the animation being player by the character
 StructuredBuffer<float> _C2T;               // 1 float per character, representing the point in the animation each character is in
 RWStructuredBuffer<float4x4> _PoseMatrices; // _NumBones matrices per character
-RWStructuredBuffer<BoneRTS> _PoseRTSs;
 
 RWStructuredBuffer<float> _Debug;
 
@@ -81,10 +80,20 @@ float4x4 TransToMatrix(float3 t)
 {
     return float4x4(
         1,  0,  0,  t.x,
-        0,  1,  0,  t.z,
-        0,  0,  1,  t.y,
+        0,  1,  0,  t.y,
+        0,  0,  1,  t.z,
         0,  0,  0,  1
     ); 
+}
+
+float4x4 ScaleToMatrix(float3 s)
+{
+    return float4x4(
+        s.x,  0,  0,  0,
+        0,  s.y,  0,  0,
+        0,  0,  s.z,  0,
+        0,  0,  0,  1
+    );
 }
 
 [numthreads(64,1,1)]
@@ -103,21 +112,14 @@ void EvaluatePoses(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThr
     GroupMemoryBarrierWithGroupSync();
 
     int boneID = groupThreadID.x;
-    // if(boneID >= _NumBones) return;
+    if(boneID >= _NumBones) return;
     
     // Already accounts for _NumBones
     BoneRTS prevRTS = _BoneRTSs[prevFrame + boneID];
     BoneRTS nextRTS = _BoneRTSs[nextFrame + boneID];
 
     float3 pos = lerp(prevRTS.pos.xyz, nextRTS.pos.xyz, frameLerp);
-
-    // Trying to debug
-    // float4x4 boneMatrix = float4x4(
-    //     1,      0,      0,      pos.x * 100,
-    //     0,      1,      0,      pos.z * 100,
-    //     0,      0,      1,      pos.y * 100,
-    //     0,      0,      0,      1
-    // );
+    float3 scl = lerp(prevRTS.scale.xyz, nextRTS.scale.xyz, frameLerp);
 
     float4 r1 = prevRTS.rot;
     float4 r2 = nextRTS.rot;
@@ -127,38 +129,8 @@ void EvaluatePoses(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThr
 
     float PI = 3.14159265359;
     float4 testRot = float4(0, sin(PI/4), 0, cos(PI/4)); // 90° around Y
-    float4x4 boneMatrix = mul(TransToMatrix(pos), QuatToMatrix(rot));
+    float4x4 boneMatrix = mul(QuatToMatrix(rot), ScaleToMatrix(scl));
+    boneMatrix._m03_m13_m23 = TransToMatrix(pos)._m03_m13_m23;
 
     _PoseMatrices[cID * _NumBones + boneID] = boneMatrix;
-
-    BoneRTS poseRTS;
-    poseRTS.pos = float4(pos, 0);
-    poseRTS.rot = rot;
-    poseRTS.scale = float4(0,0,0,0);
-    _PoseRTSs[cID * _NumBones + boneID] = poseRTS;
-
-    // Leaving rotation and scale for later....
-
-    // float3 scl = lerp(prevRTS.scale.xyz, nextRTS.scale.xyz, frameLerp);
-
-    // float4 r1 = prevRTS.rot;
-    // float4 r2 = nextRTS.rot;
-    // if (dot(r1, r2) < 0) r2 = -r2; // to avoid fliping
-    // float4 rot = normalize(lerp(r1, r2, frameLerp)); // nlerp
-
-    // float y2 = rot.y*rot.y;
-    // float4x4 rotationMatrix = float4x4(
-    //     1 - 2*(rot.y*rot.y + rot.z*rot.z),  2*(rot.x*rot.y - rot.w*rot.z),      2*(rot.x*rot.z + rot.w*rot.y),      0,
-    //     2*(rot.x*rot.y + rot.w*rot.z),      1 - 2*(rot.x*rot.x + rot.z*rot.z),  2*(rot.y*rot.z - rot.w*rot.x),      0,
-    //     2*(rot.x*rot.z - rot.w*rot.y),      2*(rot.y*rot.z + rot.w*rot.x),      1 - 2*(rot.x*rot.x + rot.y*rot.y),  0,
-    //     pos.x,                              pos.y,                              pos.z,                              1
-    // );
-    // float4x4 scaleMatrix = float4x4(
-    //     scl.x, 0, 0, 0,
-    //     0, scl.y, 0, 0,
-    //     0, 0, scl.z, 0,
-    //     0, 0, 0, 1
-    // );
-    // float4x4 boneMatrix = mul(rotationMatrix, scaleMatrix);
-    // boneMatrix[3] = float4(pos, 1.0);
 }

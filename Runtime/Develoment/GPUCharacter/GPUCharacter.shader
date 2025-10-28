@@ -24,8 +24,6 @@ Shader "IndirectDraw/GPUCharacter"
     StructuredBuffer<float4x4> _ObjectToWorldBuff;
     StructuredBuffer<float4> _BoneBindPos;
 
-    StructuredBuffer<BoneRTS> _PoseRTSs;
-
     ENDHLSL
 
     SubShader
@@ -58,16 +56,16 @@ Shader "IndirectDraw/GPUCharacter"
                 InitIndirectDrawArgs(0);
                 uint iID = GetIndirectInstanceID(svInstanceID);
                 v2f o;
-                BoneRTS rts = _PoseRTSs[(iID % _NumCharacters) * _NumBones + _V2B[svVertexID]];
+                float4x4 pm = _PoseMatrices[(iID % _NumCharacters) * _NumBones + _V2B[svVertexID]];
                 float4 wpos = mul(
-                    _ObjectToWorldBuff[iID % _NumCharacters], 
-                    v.vertex - _BoneBindPos[svVertexID] + rts.pos
+                    _ObjectToWorldBuff[iID % _NumCharacters],
+                    mul(pm, v.vertex - _BoneBindPos[_V2B[svVertexID]])
                 );
                 // float4 wpos = mul(_ObjectToWorldBuff[iID % _NumCharacters], v.vertex);
                 o.pos = mul(UNITY_MATRIX_VP, wpos);
                 o.uv = v.texcoord;
                 float4x4 test = _PoseMatrices[(iID % _NumCharacters) * _NumBones + _V2B[svVertexID]];
-                o.debug = float4(_V2B[svVertexID] == 14, 0, 0, 1);
+                o.debug = float4(_V2B[svVertexID] == 19, 0, 0, 1);
                 return o;
             }
 

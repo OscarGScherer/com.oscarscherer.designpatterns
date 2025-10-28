@@ -15,10 +15,14 @@ namespace DesignPatterns
 
         public Transform[] bones;
 
+        public Vector3 v3t;
+        public Vector4 v4t;
+
         [Button("Test")]
         void Test()
         {
             bones = smr.bones;
+            v4t = (Vector4)v3t;
         }
 
         [Button("Sample Animation")]

@@ -8,6 +8,15 @@ using System.Linq;
 [CustomEditor(typeof(CPUCharacter), true)]
 public class CPUCharacterEditor : EditorAttributes
 {
+    private int LargestBoneWeight(BoneWeight bw)
+    {
+        var pairs = new (float f, int i)[] {
+            (bw.weight0, bw.boneIndex0), (bw.weight1, bw.boneIndex1),
+            (bw.weight2, bw.boneIndex2), (bw.weight3, bw.boneIndex3) 
+        };
+        return pairs.OrderByDescending(p => p.f).First().i;
+    }
+
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
@@ -18,7 +27,7 @@ public class CPUCharacterEditor : EditorAttributes
 
             // Translate rig
             animData.numBones = cpuCharacter.smr.bones.Length;
-            animData.v2b = cpuCharacter.smr.sharedMesh.boneWeights.Select(bw => bw.boneIndex0).ToArray();
+            animData.v2b = cpuCharacter.smr.sharedMesh.boneWeights.Select(bw => LargestBoneWeight(bw)).ToArray();
 
             // Translate animations
             cpuCharacter.animations = cpuCharacter.animations.Where(a => a != null).ToList();
@@ -26,10 +35,10 @@ public class CPUCharacterEditor : EditorAttributes
 
             // Calculating tPose postions for every bone in object space
             List<GPUBoneTRS> tPose = new List<GPUBoneTRS>();
-            foreach (Transform bone in cpuCharacter.smr.bones) tPose.Add(GetRelativeTRS(bone, cpuCharacter.animator.transform));
+            foreach (Transform bone in cpuCharacter.smr.bones) tPose.Add(GetRelativeTRS(bone, cpuCharacter.transform));
 
             Transform[] bones = cpuCharacter.smr.bones;
-            animData.tPoseBonePositions = bones.Select(b => (Vector4) cpuCharacter.animator.transform.InverseTransformPoint(b.position)).ToArray();
+            animData.tPoseBonePositions = bones.Select(b => (Vector4) cpuCharacter.transform.InverseTransformPoint(b.position)).ToArray();
 
             List<GPUAnimationMeta> animMetas = new();
             List<GPUBoneTRS> boneTRSs = new();
@@ -48,7 +57,7 @@ public class CPUCharacterEditor : EditorAttributes
                     clip.SampleAnimation(cpuCharacter.animator.gameObject, time);
                     for (int bInd = 0; bInd < animData.numBones; bInd++)
                     {
-                        GPUBoneTRS boneTRS = GetRelativeTRS(bones[bInd], cpuCharacter.animator.transform);
+                        GPUBoneTRS boneTRS = GetRelativeTRS(bones[bInd], cpuCharacter.transform);
                         boneTRSs.Add(new GPUBoneTRS()
                         {
                             position = boneTRS.position,
