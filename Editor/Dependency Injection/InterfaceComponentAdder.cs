@@ -9,22 +9,9 @@ namespace DesignPatterns
 {
     public class InterfaceComponentAdder : EditorWindow
     {
-        private string interfaceName = "";
-
-        private Vector2 scroll;
-        private List<Type> matchingTypes = new List<Type>();
-        private Type matchedInterface;
-        private List<Type> matchingInterfaces = new();
-        private string matchingInterfacesNames = "";
-        private string matchingInterfacesFullNames = "";
         private GameObject selectedGO;
+        private InterfaceSearchbar interfaceSearchbar = new();
 
-        private static List<Type> allInterfaces = new();
-
-        static InterfaceComponentAdder()
-        {
-            if (allInterfaces == null || allInterfaces.Count == 0) allInterfaces = GetAllInterfaces();
-        }
 
         [MenuItem("Tools/Interface Component Adder")]
         public static void ShowWindow()
@@ -32,7 +19,55 @@ namespace DesignPatterns
             GetWindow<InterfaceComponentAdder>("Add Component By Interface");
         }
 
-        private void UpdateInterfaceSearch()
+        private void OnGUI()
+        {
+            interfaceSearchbar.Draw();
+
+            selectedGO = Selection.activeGameObject;
+
+            if (interfaceSearchbar.matchingTypes.Count > 0)
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Click to add to a single selected gameobject:");
+
+                int count = 0;
+                foreach (var type in interfaceSearchbar.matchingTypes)
+                {
+                    if (count > 10)
+                    {
+                        EditorGUILayout.LabelField("...");
+                        break;
+                    }
+                    count++;
+                    if (GUILayout.Button(type.FullName))
+                    {
+                        if (selectedGO != null) Undo.AddComponent(selectedGO, type);
+                        // Debug.Log($"Added {type.Name} to {selectedGO.name}");
+                    }
+                }
+            }
+        }
+    }
+
+    public class InterfaceSearchbar
+    {
+        private string interfaceName = "";
+
+        private Vector2 scroll;
+        public List<Type> matchingTypes = new List<Type>();
+        public Type matchedInterface;
+        private List<Type> matchingInterfaces = new();
+        private string matchingInterfacesNames = "";
+        private string matchingInterfacesFullNames = "";
+
+        private static List<Type> allInterfaces = new();
+
+        static InterfaceSearchbar()
+        {
+            if (allInterfaces == null || allInterfaces.Count == 0) allInterfaces = GetAllInterfaces();
+        }
+
+        private bool UpdateInterfaceSearch()
         {
             matchingInterfaces = GetMatchingInterfaces(interfaceName, allInterfaces, 20);
 
@@ -46,19 +81,23 @@ namespace DesignPatterns
             {
                 matchedInterface = topMatch;
                 if (matchedInterface == null) matchingTypes = new List<Type>();
-                else matchingTypes = TypeFinder.GetAllDerivedTypes(matchedInterface, t => typeof(MonoBehaviour).IsAssignableFrom(t));
+                else matchingTypes = TypeFinder.GetAllDerivedTypes(matchedInterface).Where(t => typeof(MonoBehaviour).IsAssignableFrom(t)).ToList();
+                return true;
             }
+            return false;
         }
 
-        private void OnGUI()
+        public bool Draw()
         {
-            selectedGO = Selection.activeGameObject;
+            bool matchedInterfacedChanged = false;
+
             EditorGUI.BeginChangeCheck();
+            GUI.SetNextControlName("InterfaceaName");
             interfaceName = EditorGUILayout.TextField("Interface Name", interfaceName);
-            if (EditorGUI.EndChangeCheck()) UpdateInterfaceSearch();
-            
+            if (EditorGUI.EndChangeCheck()) matchedInterfacedChanged = UpdateInterfaceSearch();
+
             Event e = Event.current;
-            if(hasFocus && e.type == EventType.KeyDown && e.keyCode == KeyCode.Tab)
+            if (GUI.GetNameOfFocusedControl() == "InterfaceaName" && e.type == EventType.KeyDown && e.keyCode == KeyCode.Tab)
             {
                 interfaceName = matchingInterfaces.Count > 0 ? matchingInterfaces[0].Name : interfaceName;
                 UpdateInterfaceSearch();
@@ -68,7 +107,7 @@ namespace DesignPatterns
             textArea.normal = new GUIStyleState() { textColor = Color.white };
             textArea.richText = true;
 
-            scroll = EditorGUILayout.BeginScrollView(scroll, GUILayout.MaxHeight(Mathf.Min(matchingInterfaces.Count*EditorGUIUtility.singleLineHeight, 100)));
+            scroll = EditorGUILayout.BeginScrollView(scroll, GUILayout.MaxHeight(Mathf.Min(matchingInterfaces.Count * EditorGUIUtility.singleLineHeight, 100)));
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField($"<i>{matchingInterfacesFullNames}</i>", textArea);
             textArea.alignment = TextAnchor.UpperLeft;
@@ -76,30 +115,7 @@ namespace DesignPatterns
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndScrollView();
 
-            if (matchingTypes.Count > 0)
-            {
-                EditorGUILayout.Space();
-                EditorGUILayout.LabelField("Click to add to a single selected gameobject:");
-                scroll = EditorGUILayout.BeginScrollView(scroll);
-
-                int count = 0;
-                foreach (var type in matchingTypes)
-                {
-                    if (count > 10)
-                    {
-                        EditorGUILayout.LabelField("...");
-                        break;
-                    }
-                    count++;
-                    if (GUILayout.Button(type.FullName))
-                    {
-                        if(selectedGO != null) Undo.AddComponent(selectedGO, type);
-                        // Debug.Log($"Added {type.Name} to {selectedGO.name}");
-                    }
-                }
-
-                EditorGUILayout.EndScrollView();
-            }
+            return matchedInterfacedChanged;
         }
 
         private static List<Type> GetAllInterfaces()
@@ -122,9 +138,10 @@ namespace DesignPatterns
 
         private static List<Type> GetMatchingInterfaces(string interfaceName, List<Type> interfaces, int maxMatches = 30)
         {
+            if (interfaceName == "") return new List<Type>(0);
             List<Type> matches = interfaces
-                .Where(i=>i.Name.StartsWith(interfaceName))
-                .OrderBy(i=>i.Name)
+                .Where(i => i.Name.StartsWith(interfaceName))
+                .OrderBy(i => i.Name)
                 .ToList();
             return matches.GetRange(0, Mathf.Min(matches.Count, maxMatches));
         }

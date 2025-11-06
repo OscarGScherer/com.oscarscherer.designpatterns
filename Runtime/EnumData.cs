@@ -7,7 +7,7 @@ namespace DesignPatterns
     [Serializable]
     public class EnumData<E> : ISerializationCallbackReceiver where E : Enum
     {
-        [SerializeField] private string _enumFullTypeName;
+        [SerializeField] private string _enumAssemblyQualifiedName;
         [SerializeField] private Data[] _data;
         [SerializeField] private MetaData[] _metaData;
         [SerializeField] private int _offset;
@@ -24,7 +24,7 @@ namespace DesignPatterns
 
         public EnumData()
         {
-            _enumFullTypeName = typeof(E).FullName;
+            _enumAssemblyQualifiedName = typeof(E).FullName;
             InitializeData();
             UpdateMetaDataFromData();
         }

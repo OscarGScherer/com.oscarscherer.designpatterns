@@ -35,7 +35,7 @@ namespace DesignPatterns
             return (T) singletons[typeof(T)];
         }
         /// <summary>
-        /// Properly adds itself to the singleton dictionary.
+        /// Adds itself to the singleton dictionary.
         /// If you override this, make sure you execute base.OnEnable().
         /// </summary>
         protected virtual void OnEnable()
@@ -49,7 +49,7 @@ namespace DesignPatterns
             else singletons.Add(GetType(),this);
         }
         /// <summary>
-        /// Properly removes itself from the singleton dictionary.
+        /// Removes itself from the singleton dictionary.
         /// If you override this, make sure you execute base.OnDisable().
         /// </summary>
         protected virtual void OnDisable()

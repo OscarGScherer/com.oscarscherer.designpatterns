@@ -21,7 +21,8 @@ namespace DesignPatterns
 
             SerializedProperty _metaData = property.FindPropertyRelative("_metaData");
 
-            Type enumType = TypeFinder.GetTypeFromTypeFullName(property.FindPropertyRelative("_enumFullTypeName").stringValue);
+            string enumAQN = property.FindPropertyRelative("_enumAssemblyQualifiedName").stringValue;
+            Type enumType = enumAQN == null ? null : Type.GetType(enumAQN);
             string[] enumNames = Enum.GetNames(enumType);
 
             float currY = foldoutRect.y + EditorGUIUtility.singleLineHeight;

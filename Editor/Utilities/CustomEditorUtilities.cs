@@ -10,12 +10,25 @@ namespace DesignPatterns
     {
         public static void DrawUILine(Color color, int thickness = 2, int padding = 10)
         {
-            Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding+thickness));
+            Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
             r.height = thickness;
-            r.y+=padding/2;
-            r.x-=2;
-            r.width +=6;
+            r.y += padding / 2;
+            r.x -= 2;
+            r.width += 6;
             EditorGUI.DrawRect(r, color);
+        }
+        
+        public static bool DropDown(string label, SerializedProperty sp, string[] labels, string[] options, out int newIndex)
+        {
+            int index = System.Array.IndexOf(options, sp.stringValue);
+            newIndex = label == "" ? EditorGUILayout.Popup(index, labels) : EditorGUILayout.Popup(label, index, labels);
+            newIndex = Mathf.Clamp(newIndex, 0, options.Length);
+            if (newIndex != index)
+            {
+                sp.stringValue = options[newIndex];
+                return true;
+            }
+            return false;
         }
 
         public static bool DisplayTargetFieldsWithReflection(object target, bool show)
