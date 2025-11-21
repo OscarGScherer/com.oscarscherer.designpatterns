@@ -19,4 +19,7 @@ namespace DesignPatterns
         public readonly string Label;
         public ButtonAttribute(string label = null) => Label = label;
     }
+
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
+    public class ReadOnlyAttribute : PropertyAttribute {}
 }

@@ -6,7 +6,7 @@ using UnityEditor;
 using System.Reflection;
 
 namespace DesignPatterns
-{
+{   
     public class EditorAttributes : Editor
     {
         public override void OnInspectorGUI()
@@ -53,6 +53,22 @@ namespace DesignPatterns
         }
         
         private static T GetAttribute<T>(Type type) where T : Attribute => (T) Attribute.GetCustomAttribute(type, typeof(T));
+    }
+
+    [CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
+    public class ReadOnlyDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            GUI.enabled = false;          // Disable editing
+            EditorGUI.PropertyField(position, property, label, true);
+            GUI.enabled = true;           // Re-enable afterwards
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUI.GetPropertyHeight(property, label, true);
+        }
     }
 }
 #endif
