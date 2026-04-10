@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace DesignPatterns
 {
+    [Obsolete("Needs refactoring")]
     [Serializable]
     public class EnumData<E> : ISerializationCallbackReceiver where E : Enum
     {

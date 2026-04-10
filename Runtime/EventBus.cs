@@ -1,5 +1,7 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
+using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace DesignPatterns
@@ -9,10 +11,13 @@ namespace DesignPatterns
     /// passing any generic argument you need.
     /// Use it to communicate between systems that you don't wan't to directly couple.
     /// </summary>
+    /// /// <typeparam name="E">
+    /// Enum used as key for the event.
+    /// </typeparam>
     /// <typeparam name="T">
     /// The type of the paramenter the event takes.
     /// </typeparam>
-    public static class EventBus<T, E> where E: Enum
+    public static class EventBus<E,T> where E : Enum
     {
         public class BusEvent
         {
@@ -21,7 +26,31 @@ namespace DesignPatterns
             public BusEvent(string name) => this.name = name;
         }
 
-        private static Dictionary<(Type,Enum), BusEvent> namedEvents = new();
+        private static int offset;
+        private static BusEvent[] events;
+
+        private static int EnumToIndex(E key)
+        {
+            return offset + UnsafeUtility.As<E, int>(ref key);
+        }
+
+        static EventBus()
+        {
+            if (Enum.GetUnderlyingType(typeof(E)) != typeof(int)) 
+                throw new ArgumentException($"The enum type {typeof(E)} must have int values to be used as an EventBus key.");
+
+            var enumValues = (int[]) Enum.GetValues(typeof(E));
+            if (enumValues.Length == 0)
+            {
+                events = new BusEvent[0];
+                return;
+            }
+            int min = enumValues.Min();
+            offset = min < 0 ? Mathf.Abs(min) : 0;
+            events = new BusEvent[enumValues.Max() - enumValues.Min() + 1];
+            foreach (E enumValue in Enum.GetValues(typeof(E)))
+                events[EnumToIndex(enumValue)] = new(enumValue.ToString());
+        }
 
         /// <summary>
         /// Register to some event tied to eventEnum value and the type T.
@@ -30,14 +59,7 @@ namespace DesignPatterns
         /// <param name="action"> The action to add as listener. </param>
         public static void RegisterToEvent(E eventEnum, UnityAction<T> action)
         {
-            (Type, Enum) key = (typeof(T), eventEnum);
-            BusEvent busEvent;
-            if (!namedEvents.TryGetValue(key, out busEvent))
-            {
-                busEvent = new BusEvent($"{typeof(T).Name}|{eventEnum}");
-                namedEvents.Add(key, busEvent);
-            }
-            busEvent.unityEvent.AddListener(action);
+            events[EnumToIndex(eventEnum)].unityEvent.AddListener(action);
         }
 
         /// <summary>
@@ -47,12 +69,8 @@ namespace DesignPatterns
         /// <param name="action">Action to remove as listener.</param>
         public static void UnregisterFromEvent(E eventEnum, UnityAction<T> action)
         {
-            (Type, Enum) key = (typeof(T), eventEnum);
-            BusEvent busEvent;
-            if (!namedEvents.TryGetValue(key, out busEvent)) return;
-            busEvent.unityEvent.RemoveListener(action);
+            events[EnumToIndex(eventEnum)].unityEvent.RemoveListener(action);
         }
-
         /// <summary>
         /// Raise the event tied to the eventEnum value and type T, passing along the given param.
         /// </summary>
@@ -62,14 +80,7 @@ namespace DesignPatterns
         /// </param>
         public static void RaiseEvent(E eventEnum, T param)
         {
-            (Type, Enum) key = (typeof(T), eventEnum);
-            BusEvent busEvent;
-            if (!namedEvents.TryGetValue(key, out busEvent))
-            {
-                busEvent = new BusEvent($"{typeof(T).Name}|{eventEnum}");
-                namedEvents.Add(key, busEvent);
-            }
-            busEvent.unityEvent.Invoke(param);
+            events[EnumToIndex(eventEnum)].unityEvent.Invoke(param);
         }
     }
 }
