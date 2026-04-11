@@ -1,0 +1,14 @@
+.default-button {
+    height: 100%;
+    flex-grow: 1;
+}
+
+.horizontal-line {
+    height: 2px;
+    width: 100%;
+    margin: 8px 0px 8px 0px;
+    background-color: #616161;
+}
+
+TextField {
+}

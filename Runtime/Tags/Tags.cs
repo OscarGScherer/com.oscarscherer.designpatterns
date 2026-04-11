@@ -16,17 +16,15 @@ namespace DesignPatterns
         private List<string> tagRemoveQueue = new List<string>();
         private List<string> activeTags = new List<string>();
 
-        private UnityEvent onAddQueueUpdate = new UnityEvent();
-        private UnityEvent onRemoveQueueUpdate = new UnityEvent();
-
-        public List<string> GetTagsCopy() => new List<string>(activeTags.Count == 0 ? tagAddQueue : activeTags);
+        public List<string> GetTagsCopy() => 
+            new List<string>(activeTags.Count == 0 ? tagAddQueue : activeTags);
 
         public void AddTag(string tag)
         {
             if (tagAddQueue.Contains(tag)) return;
             tagAddQueue.Add(tag);
             tagRemoveQueue.Remove(tag);
-            onAddQueueUpdate.Invoke();
+            if (this.didStart) AddTagsFromQueue();
         }
 
         public void RemoveTag(string tag)
@@ -35,14 +33,12 @@ namespace DesignPatterns
             // If you are removing a tag, and there is no active tag, don't bother
             if (activeTags.Count == 0) return;
             tagRemoveQueue.Add(tag);
-            onRemoveQueueUpdate.Invoke();
+            if (this.didStart) RemoveTagsFromQueue();
         }
 
         void Start()
         {
             AddTagsFromQueue();
-            onAddQueueUpdate.AddListener(AddTagsFromQueue);
-            onRemoveQueueUpdate.AddListener(RemoveTagsFromQueue);
         }
 
         void AddTagsFromQueue()
@@ -52,7 +48,8 @@ namespace DesignPatterns
                 if (!activeTags.Contains(tagAddQueue[0]))
                 {
                     activeTags.Add(tagAddQueue[0]);
-                    GetTagAddEvent(tag).Invoke(gameObject);
+                    if (tagAddEvents.TryGetValue(tag, out var evt)) 
+                        evt.Invoke(gameObject);
                 }
                 tagAddQueue.RemoveAt(0);
             }
@@ -62,7 +59,9 @@ namespace DesignPatterns
         {
             while (tagRemoveQueue.Count > 0)
             {
-                if (activeTags.Remove(tagRemoveQueue[0])) GetTagRemoveEvent(tag).Invoke(gameObject);
+                if (activeTags.Remove(tagRemoveQueue[0]))
+                    if (tagRemoveEvents.TryGetValue(tag, out var evt)) 
+                        evt.Invoke(gameObject);
                 tagRemoveQueue.RemoveAt(0);
             }
         }
@@ -88,26 +87,8 @@ namespace DesignPatterns
             }
         }
 
-        private static UnityEvent<GameObject> GetTagAddEvent(string tag)
-        {
-            if (!tagAddEvents.ContainsKey(tag)) tagAddEvents.Add(tag, new UnityEvent<GameObject>());
-            return tagAddEvents[tag];
-        }
+        public static void RegisterToTagAddEvent(string tag, UnityAction<GameObject> unityAction) => tagAddEvents.GetOrAdd(tag, new()).AddListener(unityAction);
 
-        private static UnityEvent<GameObject> GetTagRemoveEvent(string tag)
-        {
-            if (!tagRemoveEvents.ContainsKey(tag)) tagRemoveEvents.Add(tag, new UnityEvent<GameObject>());
-            return tagRemoveEvents[tag];
-        }
-
-        public static void RegisterToTagAddEvent(string tag, UnityAction<GameObject> unityAction)
-        {
-            GetTagAddEvent(tag).AddListener(unityAction);
-        }
-
-        public static void RegisterToRemoveAddEvent(string tag, UnityAction<GameObject> unityAction)
-        {
-            GetTagRemoveEvent(tag).AddListener(unityAction);
-        }
+        public static void RegisterToRemoveAddEvent(string tag, UnityAction<GameObject> unityAction) => tagRemoveEvents.GetOrAdd(tag, new()).AddListener(unityAction);
     }
 }

@@ -1,10 +1,13 @@
 using UnityEngine;
 
-public static class ColorExtensions
+namespace DesignPatterns
 {
-    public static Color Hex(this Color self, string hex)
+    public static class ColorExtensions
     {
-        ColorUtility.TryParseHtmlString(hex, out self);
-        return self;
+        public static Color Hex(this Color self, string hex)
+        {
+            ColorUtility.TryParseHtmlString(hex, out self);
+            return self;
+        }
     }
 }
