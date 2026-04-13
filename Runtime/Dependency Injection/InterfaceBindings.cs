@@ -1,44 +1,46 @@
-using UnityEngine;
-using System.Collections.Generic;
-using System;
+// Other DI implementation seems better
 
-namespace DesignPatterns.DependencyInjection
-{
-    [CreateAssetMenu(menuName = "Interface Bindings")]
-    public class InterfaceBindings : ScriptableObject
-    {
-        public List<InterfaceBinding> this[Scope scope] => _bindings[(int)scope].list;
-        [SerializeField] private List<InterfaceBindingList> _bindings;
-    }
+// using UnityEngine;
+// using System.Collections.Generic;
+// using System;
 
-    [Serializable]
-    public class InterfaceBindingList
-    {
-        public List<InterfaceBinding> list;
-    }
+// namespace DesignPatterns.DependencyInjection
+// {
+//     [CreateAssetMenu(menuName = "Interface Bindings")]
+//     public class InterfaceBindings : ScriptableObject
+//     {
+//         public List<InterfaceBinding> this[Scope scope] => _bindings[(int)scope].list;
+//         [SerializeField] private List<InterfaceBindingList> _bindings;
+//     }
 
-    [Serializable]
-    public class InterfaceBinding : ISerializationCallbackReceiver
-    {
-        // Serialized
-        public string interfaceAQN, concreteAQN;
-        [SerializeReference] public object defaultValue = null;
+//     [Serializable]
+//     public class InterfaceBindingList
+//     {
+//         public List<InterfaceBinding> list;
+//     }
 
-        // Non serializable
-        public Type interfaceType, concreteType;
+//     [Serializable]
+//     public class InterfaceBinding : ISerializationCallbackReceiver
+//     {
+//         // Serialized
+//         public string interfaceAQN, concreteAQN;
+//         [SerializeReference] public object defaultValue = null;
 
-        public void OnAfterDeserialize()
-        {
-            interfaceType = AQNToType(interfaceAQN);
-            concreteType = AQNToType(concreteAQN);
-        }
+//         // Non serializable
+//         public Type interfaceType, concreteType;
 
-        public static Type AQNToType(string aqn) => aqn == null ? null : Type.GetType(aqn);
+//         public void OnAfterDeserialize()
+//         {
+//             interfaceType = AQNToType(interfaceAQN);
+//             concreteType = AQNToType(concreteAQN);
+//         }
 
-        public void OnBeforeSerialize()
-        {
-            interfaceAQN = interfaceType?.AssemblyQualifiedName ?? interfaceAQN;
-            concreteAQN = concreteType?.AssemblyQualifiedName ?? concreteAQN;
-        }
-    }
-}
+//         public static Type AQNToType(string aqn) => aqn == null ? null : Type.GetType(aqn);
+
+//         public void OnBeforeSerialize()
+//         {
+//             interfaceAQN = interfaceType?.AssemblyQualifiedName ?? interfaceAQN;
+//             concreteAQN = concreteType?.AssemblyQualifiedName ?? concreteAQN;
+//         }
+//     }
+// }

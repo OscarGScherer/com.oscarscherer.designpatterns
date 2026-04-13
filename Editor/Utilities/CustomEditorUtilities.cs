@@ -22,7 +22,7 @@ namespace DesignPatterns
         {
             int index = System.Array.IndexOf(options, sp.stringValue);
             newIndex = label == "" ? EditorGUILayout.Popup(index, labels) : EditorGUILayout.Popup(label, index, labels);
-            newIndex = Mathf.Clamp(newIndex, 0, options.Length);
+            // newIndex = Mathf.Clamp(newIndex, 0, options.Length);
             if (newIndex != index)
             {
                 sp.stringValue = options[newIndex];
