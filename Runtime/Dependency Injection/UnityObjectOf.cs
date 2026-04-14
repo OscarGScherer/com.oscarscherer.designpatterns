@@ -4,7 +4,7 @@ using UnityEngine;
 namespace DesignPatterns
 {
     [Serializable]
-    public abstract class Implementation
+    public abstract class UnityObjectOf
     {
         [SerializeField] protected Component component;
         public virtual bool Accepts(Component component) => false;
@@ -12,7 +12,7 @@ namespace DesignPatterns
     }
 
     [Serializable]
-    public class Implementation<T> : Implementation
+    public class UnityObjectOf<T> : UnityObjectOf
     {
         private T _value;
         public T value

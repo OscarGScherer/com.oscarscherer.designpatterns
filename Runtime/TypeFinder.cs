@@ -7,6 +7,8 @@ namespace DesignPatterns
 {
     public static class TypeFinder
     {
+        private static Type[] allTypes;
+
         private static Dictionary<Type, List<Type>> typeToDerivativesCache = new();
 
         public static List<Type> GetAllDerivedTypes<T>() => GetAllDerivedTypes(typeof(T));
@@ -14,22 +16,30 @@ namespace DesignPatterns
         public static List<Type> GetAllDerivedTypes(Type baseType)
         {
             if (typeToDerivativesCache.TryGetValue(baseType, out List<Type> derivedTypes)) return derivedTypes;
-            derivedTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly =>
-                {
-                    try
-                    {
+            allTypes ??= GetAllTypes();
+            derivedTypes = allTypes.Where(t => t != baseType && baseType.IsAssignableFrom(t)).ToList();
+            typeToDerivativesCache.Add(baseType, derivedTypes);
+            return derivedTypes;
+        }
+
+        private static Type[] GetAllTypes()
+        {
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => {
+                    try {
                         return assembly.GetTypes();
                     }
-                    catch (ReflectionTypeLoadException e)
-                    {
+                    catch (ReflectionTypeLoadException e) {
                         return e.Types.Where(t => t != null);
                     }
                 })
-                .Where(t => t != baseType && baseType.IsAssignableFrom(t))
-                .ToList();
-            typeToDerivativesCache.Add(baseType, derivedTypes);
-            return derivedTypes;
+                .ToArray();
+        }
+
+        public static Type[] TypeQuery(Func<Type,bool> filter)
+        {
+            allTypes ??= GetAllTypes();
+            return allTypes.Where(filter).ToArray();
         }
     }
 }

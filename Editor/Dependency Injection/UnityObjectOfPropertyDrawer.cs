@@ -4,15 +4,15 @@ using UnityEditor;
 
 namespace DesignPatterns
 {
-    [CustomPropertyDrawer(typeof(Implementation<>), true)]
-    public class ImplementationPropertyDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(UnityObjectOf<>), true)]
+    public class UnityObjectOfPropertyDrawer : PropertyDrawer
     {
         private bool wrongType = false;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             SerializedProperty componentProp = property.FindPropertyRelative("component");
 
-            Implementation ir = property.boxedValue as Implementation;
+            UnityObjectOf ir = property.boxedValue as UnityObjectOf;
             label.text += " [" + ir.Expects().Name + "]";
 
             EditorGUI.BeginProperty(position, label, property);
