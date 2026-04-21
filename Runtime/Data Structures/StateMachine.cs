@@ -15,9 +15,9 @@ namespace DesignPatterns.StateMachine
 
     public class Transition<T>
     {
-        private Transition(Type type) => this.type = type;
-        public static Transition<T> To<DT  >() where DT : T => new Transition<T>(typeof(DT));
         public Type type = typeof(T);
+        private Transition(Type type) => this.type = type;
+        public static Transition<T> To<DT>() where DT : T => new Transition<T>(typeof(DT));
     }
 
     /// <summary>
@@ -46,19 +46,17 @@ namespace DesignPatterns.StateMachine
         /// Called every frame while the SM is in this state.
         /// Controls transitions to other states.
         /// </summary>
-        /// <returns>
-        /// The type of state the SM should transition to.
-        /// </returns>
-        public abstract Transition<TS> ActiveUpdate(TSI input);
-        public override void GeneralUpdate() { /*NOOP*/ }
+        public abstract void ActiveUpdate(TSI input);
         public override void InactiveUpdate() { /*NOOP*/ }
+        public override void GeneralUpdate() { /*NOOP*/ }
+        public abstract Transition<TS> GetTransition(TSI input);
     }
 
     [Serializable]
     public abstract class StateMachine : MonoBehaviour
     {
         [NonSerialized] public bool refreshInspector = false;
-        private const int MAX_HISTORY_LENGTH = 100;
+        private const int MAX_HISTORY_LENGTH = 10;
         public LinkedList<State> stateChangeHistory = new LinkedList<State>();
 
         protected void LogStateChange(State state)
@@ -83,6 +81,7 @@ namespace DesignPatterns.StateMachine
     {
         public override State CurrentStateObject => currentState;
         protected TS currentState;
+        [SerializeField] 
         protected List<TS> states = new();
 
         private TS CreateState(Type stateType)
@@ -116,10 +115,12 @@ namespace DesignPatterns.StateMachine
             {
                 if (state == null) continue;
                 state.GeneralUpdate();
-                if (state != currentState) state.InactiveUpdate();
+                if (state == currentState)
+                    currentState.ActiveUpdate(input);
+                else 
+                    state.InactiveUpdate();
             }
-            if (currentState == null) return;
-            Type stateType = currentState.ActiveUpdate(input)?.type;
+            Type stateType = currentState.GetTransition(input)?.type;
             SetState(stateType, input);
         }
 
