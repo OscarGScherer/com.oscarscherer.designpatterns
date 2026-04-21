@@ -140,7 +140,7 @@ namespace DesignPatterns
             _FrameTimesBuff.SetData(animData.frameTimes);
             _BoneRTSsBuff.SetData(animData.boneRTSs);
             _V2BBuff.SetData(animData.v2b);
-            Matrix4x4[] posesInit = Matrix4x4.identity.RepeatForArray(Max_Characters * animData.numBones);
+            Matrix4x4[] posesInit = ArrayExtensions.RepeatForArray(Matrix4x4.identity, Max_Characters * animData.numBones);
             _PoseMatricesBuff.SetData(posesInit);
             _BoneBindPosBuff.SetData(animData.tPoseBonePositions);
 
@@ -172,8 +172,8 @@ namespace DesignPatterns
 
             // Update variable buffers
             _ObjectToWorldBuff.SetData(_ObjectToWorldArray);
-            _C2ABuff.SetData(0.RepeatForArray(Max_Characters));
-            _C2TBuff.SetData(animTime.RepeatForArray(Max_Characters));
+            _C2ABuff.SetData(ArrayExtensions.RepeatForArray(0, Max_Characters));
+            _C2TBuff.SetData(ArrayExtensions.RepeatForArray(animTime, Max_Characters));
             _gpuAnimatorCSInstance.SetInt(_NumCharactersID, numCharacters);
             _gpuAnimatorCSInstance.Dispatch(_GPUAnimCSKernel, numCharacters, 1, 1);
 

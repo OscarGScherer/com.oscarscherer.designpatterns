@@ -15,8 +15,12 @@ namespace DesignPatterns
         {
             var enumValues = EnumToInt((E[])Enum.GetValues(typeof(E)));
             START_OFFSET = enumValues.Min() * -1;
-            LENGTH = enumValues.Max() - enumValues.Min();
+            LENGTH = enumValues.Max() - enumValues.Min() + 1;
         }
+
+        #if UNITY_EDITOR
+        public const string VALUES_FIELD_NAME = nameof(values);
+        #endif
 
         [SerializeField] private T[] values;
 
@@ -59,7 +63,7 @@ namespace DesignPatterns
 
         public void OnAfterDeserialize()
         {
-            if(LENGTH != values.Length)
+            if(values == null || LENGTH != values.Length)
             {
                 T[] newValues = new T[LENGTH];
                 Array.Copy(values, newValues, LENGTH);

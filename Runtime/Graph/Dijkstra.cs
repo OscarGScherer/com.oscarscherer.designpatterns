@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,8 +15,8 @@ namespace DesignPatterns
             where N : INodeContent<N, E>
             where E : IEdgeContent<N, E>
             {
-                bool[] visited = false.RepeatForArray(nodes.Count);
-                (int, float)[] paths = (-1, Mathf.Infinity).RepeatForArray(nodes.Count);
+                bool[] visited = ArrayExtensions.RepeatForArray(false, nodes.Count);
+                (int, float)[] paths = ArrayExtensions.RepeatForArray((-1, Mathf.Infinity), nodes.Count);
 
                 paths[startNode.index] = (-1, 0f);
                 visited[startNode.index] = true;

@@ -10,7 +10,7 @@ namespace DesignPatterns
         /// <summary>
         /// Makes an array of the given length, with all indexes initialized with the value
         /// </summary>
-        public static T[] RepeatForArray<T>(this T value, int length)
+        public static T[] RepeatForArray<T>(T value, int length)
         {
             T[] array = new T[length];
             array.SetAllValuesTo(value);
