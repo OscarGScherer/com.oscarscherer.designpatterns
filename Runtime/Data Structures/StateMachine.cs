@@ -13,9 +13,10 @@ namespace DesignPatterns.StateMachine
         public abstract void GeneralUpdate();
     }
 
-    public class Transition<T>
+    // This is should be a struct to avoid heap allocation costs
+    public struct Transition<T>
     {
-        public Type type = typeof(T);
+        public Type type; // This is a reference type, but it is not allocated on typeof so its fine
         private Transition(Type type) => this.type = type;
         public static Transition<T> To<DT>() where DT : T => new Transition<T>(typeof(DT));
     }
@@ -81,7 +82,7 @@ namespace DesignPatterns.StateMachine
     {
         public override State CurrentStateObject => currentState;
         protected TS currentState;
-        [SerializeField] 
+        
         protected List<TS> states = new();
 
         private TS CreateState(Type stateType)
@@ -115,12 +116,10 @@ namespace DesignPatterns.StateMachine
             {
                 if (state == null) continue;
                 state.GeneralUpdate();
-                if (state == currentState)
-                    currentState.ActiveUpdate(input);
-                else 
-                    state.InactiveUpdate();
+                if (state == currentState) currentState.ActiveUpdate(input);
+                else state.InactiveUpdate();
             }
-            Type stateType = currentState.GetTransition(input)?.type;
+            Type stateType = currentState.GetTransition(input).type;
             SetState(stateType, input);
         }
 
