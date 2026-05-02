@@ -4,16 +4,22 @@ using System;
 using System.Linq;
 using UnityEditor;
 using System.Reflection;
+using UnityEngine.UIElements;
 
 namespace DesignPatterns
 {   
     public class EditorAttributes : Editor
     {
-        public override void OnInspectorGUI()
+        // public override void OnInspectorGUI()
+        // {
+        //     ShowInterfacesAttribute(target);
+        //     ButtonAttribute(target);
+        //     base.OnInspectorGUI();
+        // }
+
+        public override VisualElement CreateInspectorGUI()
         {
-            ShowInterfacesAttribute(target);
-            ButtonAttribute(target);
-            base.OnInspectorGUI();
+            return base.CreateInspectorGUI();
         }
 
         private static void ButtonAttribute(UnityEngine.Object target)

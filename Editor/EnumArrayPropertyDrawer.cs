@@ -22,13 +22,13 @@ namespace DesignPatterns
             var values = property.FindPropertyRelative(EnumArray<PlaceHolder,int>.VALUES_FIELD_NAME);
             if (values == null) return root; // No values were serialized
 
-            Type baseType = fieldInfo.FieldType.BaseType;
-            while (baseType != null && (!baseType.IsGenericType || baseType.GetGenericTypeDefinition() != typeof(EnumArray<,>))) 
-                baseType = baseType.BaseType;
-            if (baseType == null || !baseType.IsGenericType) 
+            Type enumArrayType = fieldInfo.FieldType;
+            while (enumArrayType != null && (!enumArrayType.IsGenericType || enumArrayType.GetGenericTypeDefinition() != typeof(EnumArray<,>))) 
+                enumArrayType = enumArrayType.BaseType;
+            if (enumArrayType == null || !enumArrayType.IsGenericType) 
                 return root;
 
-            Type enumType = baseType.GetGenericArguments()[0];
+            Type enumType = enumArrayType.GetGenericArguments()[0];
             
             var names = Enum.GetNames(enumType);
             foreach(var name in names)

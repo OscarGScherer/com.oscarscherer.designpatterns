@@ -63,7 +63,8 @@ namespace DesignPatterns
 
         public void OnAfterDeserialize()
         {
-            if(values == null || LENGTH != values.Length)
+            if (values == null) values = new T[LENGTH];
+            else if(LENGTH != values.Length)
             {
                 T[] newValues = new T[LENGTH];
                 Array.Copy(values, newValues, LENGTH);
