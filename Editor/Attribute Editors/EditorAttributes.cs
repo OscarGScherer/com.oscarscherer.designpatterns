@@ -9,7 +9,7 @@ using UnityEditor.UIElements;
 
 namespace DesignPatterns
 {   
-    public class CustomEditor : Editor
+    public class CustomInspector : Editor
     {
         // public override void OnInspectorGUI()
         // {
