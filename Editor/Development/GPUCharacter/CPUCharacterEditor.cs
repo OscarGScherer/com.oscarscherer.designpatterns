@@ -5,8 +5,8 @@ using UnityEditor;
 using DesignPatterns;
 using System.Linq;
 
-[CustomEditor(typeof(CPUCharacter), true)]
-public class CPUCharacterEditor : EditorAttributes
+[UnityEditor.CustomEditor(typeof(CPUCharacter), true)]
+public class CPUCharacterEditor : DesignPatterns.CustomEditor
 {
     private int LargestBoneWeight(BoneWeight bw)
     {

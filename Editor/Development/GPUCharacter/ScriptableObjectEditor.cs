@@ -5,7 +5,7 @@ using UnityEditor;
 namespace DesignPatterns
 {
     [CustomEditor(typeof(ScriptableObject), true)]
-    public class ScriptableObjectEditor : EditorAttributes
+    public class ScriptableObjectEditor : CustomEditor
     {
 
     }

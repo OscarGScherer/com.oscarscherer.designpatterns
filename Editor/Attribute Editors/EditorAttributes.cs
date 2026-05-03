@@ -5,10 +5,11 @@ using System.Linq;
 using UnityEditor;
 using System.Reflection;
 using UnityEngine.UIElements;
+using UnityEditor.UIElements;
 
 namespace DesignPatterns
 {   
-    public class EditorAttributes : Editor
+    public class CustomEditor : Editor
     {
         // public override void OnInspectorGUI()
         // {
@@ -19,7 +20,9 @@ namespace DesignPatterns
 
         public override VisualElement CreateInspectorGUI()
         {
-            return base.CreateInspectorGUI();
+            var container = new VisualElement();
+            InspectorElement.FillDefaultInspector(container, serializedObject, this);
+            return container;
         }
 
         private static void ButtonAttribute(UnityEngine.Object target)
