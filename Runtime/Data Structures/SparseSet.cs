@@ -17,17 +17,55 @@ namespace DesignPatterns
         [SerializeField] private int[] id_to_index = new int[0];
         [SerializeField] private int[] index_to_id = new int[0];
 
-        [field: SerializeField] public int Count { get; private set; } = 0;
+        [SerializeField] private int _count;
+        public int Count => _count;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T AccessByIndex(int index) => data[index];
+        #region Setters / Getters
 
-        public bool Contains(int iD)
+        // Index based
+
+        public T GetAtIndex(int index) => data[index];
+        public T SetAtIndex(int index, T item) => data[index] = item;
+
+        // ID based
+
+        public T GetAtIdOrDefault(int id)
         {
-            if (iD < 0 || iD >= id_to_index.Length) return false;
-            int index = id_to_index[iD];
+            if (!TryGetIndex(id, out int index)) return default;
+            return data[index];
+        }
+
+        public void SetAtIdOrDefault(int id, T item)
+        {
+            if (!TryGetIndex(id, out int index)) return;
+            data[index] = item;
+        }
+
+        public bool TryGetAtId(int id, out T item)
+        {
+            item = default;
+            if (!TryGetIndex(id, out int index)) return false;
+            item = data[index];
+            return true;
+        }
+
+        public bool TrySetAtId(int id, T item)
+        {
+            if (!TryGetIndex(id, out int index)) return false;
+            data[index] = item;
+            return true;
+        }
+
+        public bool Contains(int id)
+        {
+            if (id < 0 || id >= id_to_index.Length) return false;
+            int index = id_to_index[id];
             return index >= 0 && index < Count;
         }
+
+        #endregion
+
+        #region  Add / Remove
 
         public int Add(T item)
         {
@@ -49,7 +87,7 @@ namespace DesignPatterns
                 itemId = lastIndex;
             }
 
-            Count++;
+            _count++;
             return itemId;
         }
 
@@ -61,7 +99,7 @@ namespace DesignPatterns
             // If we are removing the last element, all is needed is that the count be decremented
             if (removeItemIndex >= Count)
             {
-                Count--;
+                _count--;
                 return;
             }
 
@@ -78,12 +116,22 @@ namespace DesignPatterns
             index_to_id[lastIndex] = removeItemId;
 
             // Decrementing count to signify there is one less element
-            Count--;
+            _count--;
         }
 
         public void Clear()
         {
-            Count = 0;
+            _count = 0;
+        }
+
+        #endregion
+
+        private bool TryGetIndex(int id, out int index)
+        {
+            index = -1;
+            if (id < 0 || id >= id_to_index.Length) return false;
+            index = id_to_index[id];
+            return index >= 0 && index < Count;
         }
 
         private void HandleResize(int index, int factor = 2)
