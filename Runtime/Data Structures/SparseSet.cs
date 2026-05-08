@@ -1,5 +1,6 @@
 using System;
-using System.Runtime.CompilerServices;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DesignPatterns
@@ -11,7 +12,7 @@ namespace DesignPatterns
     /// lookup via indexes (O(1), memory access IS sequential)
     /// </summary>
     [Serializable]
-    public class SparseSet<T>
+    public class SparseSet<T> : IEnumerable<T>
     {
         [SerializeField] private T[] data = new T[0];
         [SerializeField] private int[] id_to_index = new int[0];
@@ -91,11 +92,20 @@ namespace DesignPatterns
             return itemId;
         }
 
-        public void Remove(int removeItemId)
+        public void RemoveByIndex(int removeItemIndex)
         {
-            if (removeItemId < 0 || removeItemId >= id_to_index.Length) throw new IndexOutOfRangeException();
-            int removeItemIndex = id_to_index[removeItemId];
+            if (removeItemIndex < 0 || removeItemIndex >= Count) return;
+            RemoveHelper(index_to_id[removeItemIndex], removeItemIndex);
+        }
 
+        public void RemoveById(int removeItemId)
+        {
+            if (removeItemId < 0 || removeItemId >= id_to_index.Length) return;
+            RemoveHelper(removeItemId, id_to_index[removeItemId]);
+        }
+
+        private void RemoveHelper(int removeItemId, int removeItemIndex)
+        {
             // If we are removing the last element, all is needed is that the count be decremented
             if (removeItemIndex >= Count)
             {
@@ -157,5 +167,12 @@ namespace DesignPatterns
             array[indexA] = array[indexB];
             array[indexB] = temp;
         }
+
+        #region IEnumerable
+
+        public IEnumerator<T> GetEnumerator() => (IEnumerator<T>) data[.._count].GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        #endregion
     }
 }
