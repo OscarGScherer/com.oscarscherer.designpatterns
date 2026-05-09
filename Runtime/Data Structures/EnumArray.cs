@@ -67,7 +67,7 @@ namespace DesignPatterns
             else if(LENGTH != values.Length)
             {
                 T[] newValues = new T[LENGTH];
-                Array.Copy(values, newValues, LENGTH);
+                Array.Copy(values, newValues, values.Length);
                 values = newValues;
             }
         }
