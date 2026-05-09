@@ -21,7 +21,7 @@ namespace DesignPatterns
         public uint[] vertexToBones;
 
 
-        [Button("Test")]
+        [Button(1, "Test")]
         void Convert()
         {
             if (cpuCharacter == null) return;

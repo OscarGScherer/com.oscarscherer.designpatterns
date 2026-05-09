@@ -18,14 +18,14 @@ namespace DesignPatterns
         public Vector3 v3t;
         public Vector4 v4t;
 
-        [Button("Test")]
+        [Button(1, "Test")]
         void Test()
         {
             bones = smr.bones;
             v4t = (Vector4)v3t;
         }
 
-        [Button("Sample Animation")]
+        [Button(2, "Sample Animation")]
         void SampleAnimation()
         {
             animations[0].SampleAnimation(animator.gameObject, t);
