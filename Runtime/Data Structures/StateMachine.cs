@@ -119,13 +119,10 @@ namespace DesignPatterns.StateMachine
                 if (state == currentState) currentState.ActiveUpdate(input);
                 else state.InactiveUpdate();
             }
-            Type stateType = currentState.GetTransition(input).type;
-            SetState(stateType, input);
+            SetState(input, currentState.GetTransition(input));
         }
 
-        /// <summary>
-        /// Transitions to the SM's state of the same type of the given state type.
-        /// </summary>
+        public void SetState<DTS>(TSI input, Transition<DTS> transition) where DTS : TS => SetState(transition.type, input);
         public void SetState<DTS>(TSI input) where DTS : TS => SetState(typeof(DTS), input);
         public void AddState<DTS>(DTS state) where DTS : TS
         {
