@@ -6,19 +6,24 @@ using UnityEngine;
 namespace DesignPatterns.DependencyInjection
 {
     [AttributeUsage(AttributeTargets.Class)]
-    public class DIBinderAttribute : Attribute
+    public class DIBinderAttribute : Attribute {}
+
+    public class DI
     {
-        
+        protected static bool _binderWasExecuted = false;
     }
 
     /// <summary>
     /// Class to allow for static dependency injection. Using generics like so is faster than using a dictionary.
     /// </summary>
     /// <typeparam name="T">The type, usually interface, that will be associated with an implementation</typeparam>
-    public class DI<T>
+    public class DI<T> : DI
     {
         static DI()
         {
+            if (_binderWasExecuted) return;
+            _binderWasExecuted = true;
+
             var binders = TypeFinder.TypeQuery(t=>t.GetCustomAttributes(typeof(DIBinderAttribute), false).Any());
             foreach(var binder in binders)
             {
@@ -27,9 +32,9 @@ namespace DesignPatterns.DependencyInjection
             }
         }
 
-        private static IDIInstancer<T> instancer = new DIDefaultInstancer<T>(); 
+        private static IDIInstancer<T> instancer = new DIUnboundInstancer<T>(); 
         private static T singleton;
-        private static ComponentAdder unityComponentAdder;
+        private static ComponentAdder unityComponentAdder= new UnboundComponentAdder();
 
         // Runtime mutability configuration
         private static bool allowChangingInstancer = false;
@@ -41,12 +46,12 @@ namespace DesignPatterns.DependencyInjection
         public static T AddComponent(GameObject gameObject) => unityComponentAdder.AddComponent(gameObject);
 
         // Helpers
-        public static bool HasInstancer() => instancer != null && instancer.GetType() != typeof(DIDefaultInstancer<T>);
+        public static bool HasInstancer() => instancer != null && instancer.GetType() != typeof(DIUnboundInstancer<T>);
 
         // Setters / Registers (as in you probably only do once)
         public static void RegisterInstancer(IDIInstancer<T> newInstancer)
         {
-            if (instancer is not DIDefaultInstancer<T> && !allowChangingInstancer) 
+            if (instancer is not DIUnboundInstancer<T> && !allowChangingInstancer) 
                 throw new InvalidOperationException($"Instancer for {typeof(T).Name} already set to {instancer.GetType()}.");
             instancer = newInstancer ?? throw new ArgumentNullException(nameof(newInstancer));
         }
@@ -73,6 +78,19 @@ namespace DesignPatterns.DependencyInjection
         {
             public override T AddComponent(GameObject gameObject) => gameObject.AddComponent<TComponent>();
         }
+
+        private class UnboundComponentAdder : ComponentAdder
+        {
+            private static string _errorMsg = "Dependency Injection Error: " +
+                $"No Unity component configured for type \"{typeof(T).FullName}\". " +
+                $"Call DI<{typeof(T).Name}>.RegisterUnityComponent<...>() on a static constructed tagged with [DIBinder] to configure it.";
+
+            public override T AddComponent(GameObject gameObject)
+            {
+                Debug.LogError(_errorMsg);
+                return default;
+            }
+        }
     }
 
     public interface IDIInstancer<T>
@@ -80,11 +98,16 @@ namespace DesignPatterns.DependencyInjection
         public abstract T Instantiate();
     }
 
-    public class DIDefaultInstancer<T> : IDIInstancer<T>
+    public class DIUnboundInstancer<T> : IDIInstancer<T>
     {
-        public T Instantiate() =>
-            throw new InvalidOperationException(
-                $"No instancer configured for type \"{typeof(T).FullName}\". " +
-                $"Call DI<{typeof(T).Name}>.SetInstancer(...) during startup.");
+        private static string _errorMsg = "Dependency Injection Error: " +
+            $"No instancer configured for type \"{typeof(T).FullName}\". " +
+            $"Call DI<{typeof(T).Name}>.SetInstancer(...) on a static constructed tagged with [DIBinder] to configure it.";
+
+        public T Instantiate()
+        {
+            Debug.LogError(_errorMsg);
+            return default;
+        }
     }
 } 
